@@ -1,3 +1,5 @@
+import Timer from '~/components/timer';
+
 import type { Lobby, User } from '@prisma/client';
 
 import Pusher from 'pusher-js';
@@ -7,33 +9,30 @@ import { v4 } from 'uuid';
 
 import { api } from '~/utils/api';
 
-type HydratedLobby = Lobby & {
-  players: User[]
-}
-
-const safeStorageGet = (str: string): string => {
-  if (typeof window === "undefined") {
-    return '';
-  }
-
-  return localStorage.getItem(str) ?? '';
-};
-
 const LobbyIdPage = () => {
   const router = useRouter();
   const { pathLobbyId } = router.query;
 
   const [lobbyId, setLobbyId] = useState<string>('');
-  const [playerName, setPlayerName] = useState<string>(safeStorageGet('playerName'));
-
-  const [lobby, setLobby] = useState<HydratedLobby>();
+  const [playerName, setPlayerName] = useState<string>('');
+  const [playerId, setPlayerId] = useState<string>('');
 
   const lobbyJoinMutation = api.lobby.join.useMutation();
   const lobbyCreateMutation = api.lobby.create.useMutation();
+  const startGameMutation = api.lobby.startGame.useMutation();
+  const nextRoundMutation = api.lobby.nextRound.useMutation();
+  const lobbyKickMutation = api.lobby.kick.useMutation();
+  // Could change to lobbyId !== '' if we want to load immediately
+  const { data: lobby, refetch: refetchLobby } = api.lobby.get.useQuery({ lobbyId: lobbyId }, { enabled: false });
+  console.log(lobby);
+
+  const utils = api.useUtils();
 
   Pusher.logToConsole = true;
 
   const joinLobby = async () => {
+    await refetchLobby();
+
     if (!lobbyId) {
       return;
     }
@@ -41,7 +40,7 @@ const LobbyIdPage = () => {
     try {
       savePlayerName();
 
-      await lobbyJoinMutation.mutateAsync({ lobbyId: lobbyId, playerName: playerName, playerId: getPlayerId() });
+      await lobbyJoinMutation.mutateAsync({ lobbyId: lobbyId, playerName: playerName, playerId: playerId });
     } catch (error) {
       // TODO display error in UI
       console.log(error);
@@ -52,9 +51,11 @@ const LobbyIdPage = () => {
     try {
       savePlayerName();
 
-      const result = await lobbyCreateMutation.mutateAsync({ playerName: playerName, playerId: getPlayerId() });
-
-      setLobby(result)
+      const newLobby = await lobbyCreateMutation.mutateAsync({ playerName: playerName, playerId: playerId });
+      if (newLobby.id) {
+        setLobbyId(newLobby.id);
+        await refetchLobby();
+      }
     } catch (error) {
       // TODO display error in UI
 
@@ -62,53 +63,74 @@ const LobbyIdPage = () => {
     }
   }
 
-  const getPlayerId = () => {
-    const playerId = safeStorageGet('playerId');
-    if (playerId) {
-      return playerId;
-    }
+  const startGame = async () => {
+    await startGameMutation.mutateAsync({ lobbyId: lobbyId });
+  }
 
-    const newPlayerId = v4();
-    localStorage.setItem('playerId', newPlayerId);
-    return newPlayerId;
+  const nextRound = async () => {
+    await nextRoundMutation.mutateAsync({ lobbyId: lobbyId });
+  }
+
+  const kickPlayer = (playerId: string) => async () => {
+    await lobbyKickMutation.mutateAsync({ lobbyId: lobbyId, playerId: playerId });
   };
 
   const savePlayerName = () => {
     localStorage.setItem('playerName', playerName);
   }
 
+  useEffect(() => {
+    if (typeof pathLobbyId !== 'string') {
+      return;
+    }
+
+    setLobbyId(pathLobbyId);
+  }, [pathLobbyId]);
+
   const hasRun = useRef(false);
   useEffect(() => {
-    if (typeof pathLobbyId !== 'string' || hasRun.current) {
+    if (hasRun.current) {
       return;
     }
     hasRun.current = true;
+    
+    setPlayerName(localStorage.getItem('playerName') ?? '');
 
-    setLobbyId(pathLobbyId);
+    let playerId = localStorage.getItem('playerId');
+    if (!playerId) {
+      playerId = v4();
+      localStorage.setItem('playerId', playerId);
+    }
+
+    setPlayerId(playerId);
 
     const pusher = new Pusher('622c76977c5377aae795', {
       cluster: 'us2'
     });
 
-    const channel = pusher.subscribe(`lobby-${pathLobbyId}`);
-    channel.bind('playerJoined-event', function () {
-      const lobbyGetQuery = api.lobby.get.useQuery({ lobbyId: pathLobbyId }, { enabled: false });
+    const channel = pusher.subscribe(`lobby-${lobbyId}`);
 
-      if (!lobbyGetQuery.data || lobbyGetQuery.isError) {
-        return;
-      }
-
-      setLobby(lobbyGetQuery.data);
+    channel.bind('lobbyUpdated-event', async function () {
+      console.log('Lobby updated');
+      await utils.lobby.get.invalidate({ lobbyId: lobbyId });
     });
-  }, [pathLobbyId]);
+    
+    channel.bind('roundStarted-event', async function () {
+      console.log('Round started');
+      await utils.lobby.get.invalidate({ lobbyId: lobbyId });
+    });
+  }, []);
 
   return (
     <div>
+      {/* This should be an overlay, preventing players from interacting without first joining themselves */}
+      <div>
+        <h3>Player Name</h3>
+        <input value={playerName} onChange={(e) => setPlayerName(e.target.value)} type='text' className='border-2 border-slate-500'></input>
+      </div>
       {!lobby &&
         <div className=''>
           <h2>Join Lobby</h2>
-          <h3>Player Name</h3>
-          <input value={playerName} onChange={(e) => setPlayerName(e.target.value)} type='text' className='border-2 border-slate-500'></input>
           <h3>Lobby ID</h3>
           <input value={lobbyId} onChange={(e) => setLobbyId(e.target.value)} type='text' className='border-2 border-slate-500'></input>
           <button onClick={joinLobby}>Join Lobby</button>
@@ -118,12 +140,43 @@ const LobbyIdPage = () => {
       {lobby &&
         <div>
           <h1>Lobby ID: {lobby.id}</h1>
-          <h2>Current word: { }</h2>
+          {playerName &&
+            <div>
+              <h2>Joined as '{playerName}'</h2>
+            </div>
+          }
+          <h2>Current word: {lobby.currentWord}</h2>
+          {lobby.roundExpiration && 
+            <div>
+              <h2>Time:</h2>
+              <Timer expiration={lobby.roundExpiration} />
+            </div>
+          }
+          {lobby.leaderId === playerId &&
+            <div>
+              {!lobby.gameStarted && 
+                <div>
+                  <button onClick={startGame}>Start</button>
+                </div>
+              }
+              {lobby.gameStarted &&
+                <div>
+                  <button onClick={nextRound}>Next round</button>
+                </div>
+              }
+            </div>
+          }
+          {/* {lobby.roundExpiration} */}
           <h2>Players</h2>
           <ul>
-            {lobby.players.map((player) => {
+            {lobby?.players.map((player) => {
               return (
-                <li key={player.id}>{player.name} - {player.score}</li>
+                <li key={player.id} className='flex'>
+                  <div className='inline-flex'>
+                    <div>{player.name} - {player.score}</div>
+                    <button onClick={kickPlayer(player.id)}>❌</button>
+                  </div>
+                </li>
               );
             })}
           </ul>
