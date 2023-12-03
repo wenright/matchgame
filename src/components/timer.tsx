@@ -1,27 +1,27 @@
 import { useEffect, useState } from 'react';
 
 const Timer = (props: { expiration: Date }) => {
-    const timeRemaining = (props.expiration.getTime() - (new Date()).getTime()) / 1000;
-    
-    const [seconds, setSeconds] = useState<number>(timeRemaining);
+    const [ms, setMs] = useState<number>(props.expiration.getTime() - Date.now());
 
     useEffect(() => {
         const interval = setInterval(() => {
-            setSeconds(seconds => seconds - 1);
-
-            if (seconds <= 0) {
-                // TODO end game
-                setSeconds(0);
-                clearInterval(interval);
-            }
+            setMs(_ => {
+                const diff = props.expiration.getTime() - Date.now();
+                if (diff <= 0) {
+                    clearInterval(interval);
+                    return 0;
+                }
+                
+                return diff;
+            });
         }, 1000);
 
         return () => clearInterval(interval);
-    }, []);
+    }, [props.expiration]);
 
     return (
         <div>
-            <div>{seconds.toFixed(0)}</div>
+            <div>{(ms / 1000).toFixed(0)}</div>
         </div>
     );
 };

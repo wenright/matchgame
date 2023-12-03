@@ -26,40 +26,33 @@ export const lobbyRouter = createTRPCRouter({
   join: publicProcedure
     .input(z.object({ lobbyId: z.string().uuid(), playerName: z.string().min(1), playerId: z.string().uuid() }))
     .mutation(async ({ ctx, input }) => {
-      const existingPlayer = await ctx.db.user.findUnique({
+      const existingPlayer = await ctx.db.user.upsert({
+        create: {
+          id: input.playerId,
+          name: input.playerName,
+          lobbyId: input.lobbyId,
+        },
+        update: {},
         where: {
           id: input.playerId,
         },
       });
 
-      if (existingPlayer) {
-        await ctx.db.user.update({
-          where: {
-            id: input.playerId,
-          },
-          data: {
-            name: input.playerName,
-            lobbyId: input.lobbyId,
-          },
-        });
-      } else {
-        await ctx.db.lobby.update({
-          where: {
-            id: input.lobbyId,
-          },
-          data: {
-            players: {
-              create: {
-                id: input.playerId,
-                name: input.playerName,
-              },
+      await ctx.db.lobby.update({
+        where: {
+          id: input.lobbyId,
+        },
+        data: {
+          players: {
+            connect: {
+              id: input.playerId,
             },
           },
-          include: {
-            players: true,
-          },
-        });
-      }
+        },
+        include: {
+          players: true,
+        },
+      });
 
       await triggerEvent(input.lobbyId, "lobbyUpdated-event");
     }),
@@ -71,9 +64,8 @@ export const lobbyRouter = createTRPCRouter({
         data: {
           id: v4(),
           players: {
-            create: {
+            connect: {
               id: input.playerId,
-              name: input.playerName,
             },
           },
           leaderId: input.playerId,
@@ -177,5 +169,18 @@ export const lobbyRouter = createTRPCRouter({
       }
       
       await triggerEvent(input.lobbyId, "roundStarted-event");
+    }),
+
+  submitWord: publicProcedure
+    .input(z.object({ playerId: z.string().uuid(), word: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      await ctx.db.user.update({
+        where: {
+          id: input.playerId,
+        },
+        data: {
+          submittedWord: input.word,
+        },
+      });
     }),
 });
