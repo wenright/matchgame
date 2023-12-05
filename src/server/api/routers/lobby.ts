@@ -99,6 +99,7 @@ export const lobbyRouter = createTRPCRouter({
   get: publicProcedure
     .input(z.object({ lobbyId: z.string().uuid() }))
     .query(async ({ ctx, input }) => {
+      // TODO exclude player ID
       return await ctx.db.lobby.findUnique({
         where: {
           id: input.lobbyId,
@@ -137,6 +138,57 @@ export const lobbyRouter = createTRPCRouter({
   nextRound: publicProcedure
     .input(z.object({ lobbyId: z.string().uuid() }))
     .mutation(async ({ ctx, input }) => {
+      const players = await ctx.db.user.findMany({
+        where: {
+          lobbyId: input.lobbyId,
+        },
+      });
+
+      // Map words to number of matches
+      const wordsToMatches = new Map<string, number>();
+      for (const player of players) {
+        if (player.submittedWord === null) {
+          continue;
+        }
+
+        wordsToMatches.set(player.submittedWord as string, (wordsToMatches.get(player.submittedWord as string) ?? 0) + 1);
+      }
+
+      // Calculate scores
+      // Players get 2 points if their word matches exactly 1 other player's word
+      // Players get 1 point if their word matches 2 or more other players' words
+      for (const player of players) {
+        if (player.submittedWord === null) {
+          continue;
+        }
+
+        const matches = wordsToMatches.get(player.submittedWord as string) ?? 0;
+        const score = matches === 1 ? 2 : matches >= 2 ? 1 : 0;
+
+        await ctx.db.user.update({
+          where: {
+            id: player.id,
+          },
+          data: {
+            score: {
+              increment: score,
+            },
+          },
+        });
+      }
+
+      // Clear players' words
+      for (const player of players) {
+        await ctx.db.user.update({
+          where: {
+            id: player.id,
+          },
+          data: {
+            submittedWord: null,
+          },
+        });
+      }
+      
       const previousWords = await ctx.db.lobby.findUnique({
         where: {
           id: input.lobbyId,
@@ -146,16 +198,16 @@ export const lobbyRouter = createTRPCRouter({
         },
       });
       
-      const word = getRandomWord(previousWords?.previousWords ?? []);
+      const newWord = getRandomWord(previousWords?.previousWords ?? []);
       
       const lobby = await ctx.db.lobby.update({
         where: {
           id: input.lobbyId,
         },
         data: {
-          currentWord: word,
+          currentWord: newWord,
           previousWords: {
-            push: word,
+            push: newWord,
           },
           roundExpiration: new Date(Date.now() + 1000 * ROUND_TIMER),
         },

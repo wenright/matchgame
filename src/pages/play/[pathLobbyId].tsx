@@ -1,5 +1,6 @@
 import Timer from '~/components/timer';
 import Button from '~/components/button';
+import Input from '~/components/input';
 
 import type { Lobby, User } from '@prisma/client';
 
@@ -146,19 +147,18 @@ const LobbyIdPage = () => {
   };
 
   return (
-    <div className="bg-stone-900 text-stone-100 h-full font-sans">
+    <div className="bg-stone-900 text-stone-100 h-full font-poppins p-4 flex flex-col justify-center content-center items-center">
       {/* This should be an overlay, preventing players from interacting without first joining themselves */}
-      <div>
-        <h3>Player Name</h3>
-        <input value={playerName} onChange={(e) => setPlayerName(e.target.value)} type='text' className='border-2 border-slate-500'></input>
-      </div>
       {!lobby &&
         <div className=''>
-          <h2>Join Lobby</h2>
+          <h1 className='text-4xl my-8'>Game</h1>
+          <div className='m-4'>
+            <Input value={playerName} stateFn={setPlayerName} />
+          </div>
           <h3>Lobby ID</h3>
-          <input value={inputLobbyId} onChange={(e) => setInputLobbyId(e.target.value)} type='text' className='border-2 border-slate-500'></input>
-          <button onClick={joinLobby}>Join Lobby</button>
-          <button onClick={createLobby}>Create Lobby</button>
+          <Input value={inputLobbyId} stateFn={setInputLobbyId} />
+          <Button onClick={joinLobby} text='Join Lobby' />
+          <Button onClick={createLobby} text='Create Lobby' />
         </div>
       }
       {lobby &&
@@ -183,9 +183,9 @@ const LobbyIdPage = () => {
               {!wordSubmitted &&
                 <div>
                   <h2>Enter your word</h2>
-                  <div>
-                    <input value={word} onChange={(e) => setWord(e.target.value)} type='text' className='border-2 border-slate-500'></input>
-                    <button onClick={submitWord(playerId, word)}>Submit</button>
+                  <div className='flex flex-col content-center items-center'>
+                    <Input value={word} stateFn={setWord} />
+                    <Button onClick={submitWord(playerId, word)} text='Submit' />
                   </div>
                 </div>
               }
@@ -198,15 +198,15 @@ const LobbyIdPage = () => {
           }
           {/* Leader controls */}
           {lobby.leaderId === playerId &&
-            <div>
+            <div className='flex flex-col content-center items-center'>
               {!lobby.gameStarted && 
                 <div>
-                  <button onClick={startGame}>Start</button>
+                  <Button onClick={startGame} text='Start' />
                 </div>
               }
               {lobby.gameStarted &&
                 <div>
-                  <button onClick={nextRound}>Next round</button>
+                  <Button onClick={nextRound} text='Next round' />
                 </div>
               }
             </div>
@@ -219,7 +219,12 @@ const LobbyIdPage = () => {
                 <li key={player.id} className='flex'>
                   <div className='inline-flex'>
                     <div>{player.name} - {player.score}</div>
-                    <button onClick={kickPlayer(player.id)}>❌</button>
+                    {player.submittedWord &&
+                      <div>✅</div>
+                    }
+                    {lobby.leaderId === playerId &&
+                      <button onClick={kickPlayer(player.id)}>❌</button>
+                    }
                   </div>
                 </li>
               );
