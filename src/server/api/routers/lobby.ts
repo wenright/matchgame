@@ -66,16 +66,7 @@ export const lobbyRouter = createTRPCRouter({
       return await ctx.db.lobby.create({
         data: {
           id: v4(),
-          players: {
-            connect: {
-              id: input.playerId,
-            },
-          },
           leaderId: input.playerId,
-          roundExpiration: new Date(Date.now() + 1000 * ROUND_TIMER),
-        },
-        include: {
-          players: true,
         },
       });
     }),

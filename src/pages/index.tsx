@@ -34,7 +34,7 @@ export default function Home() {
         <link rel="icon" href="/favicon.ico" />
       </Head>
       <main className="flex min-h-screen flex-col items-center justify-center">
-        <div className="bg-stone-900 text-stone-100 h-full font-poppins container flex flex-col items-center justify-center">
+        <div className="bg-stone-900 text-stone-100 h-full w-full font-poppins flex flex-col items-center justify-center">
           <h1 className='text-4xl my-8'>Game</h1>
           <Button onClick={createLobby} text='Create Lobby' />
         </div>

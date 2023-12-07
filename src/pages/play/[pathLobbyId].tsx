@@ -115,13 +115,13 @@ const LobbyIdPage = () => {
   };
 
   return (
-    <div className="bg-stone-900 text-stone-100 h-full font-poppins container flex flex-col justify-center content-center items-center p-8">
+    <div className="bg-stone-900 text-stone-100 h-full w-full font-poppins flex flex-col justify-center content-center items-center p-8">
       {/* This should be an overlay, preventing players from interacting without first joining themselves */}
       {!lobby &&
         <div className=''>
           <h1 className='text-4xl my-8'>Game</h1>
           <div className='my-4'>
-            <Input value={playerName} stateFn={setPlayerName} />
+            <Input value={playerName} placeholder='Enter your name' stateFn={setPlayerName} />
           </div>
           <Button onClick={joinLobby} text='Join Lobby' />
         </div>
@@ -149,7 +149,7 @@ const LobbyIdPage = () => {
                 <div>
                   <h2>Enter your word</h2>
                   <div className='flex flex-col content-center items-center'>
-                    <Input value={word} stateFn={setWord} />
+                    <Input value={word} placeholder='Enter your word' stateFn={setWord} />
                     <Button onClick={submitWord(playerId, word)} text='Submit' />
                   </div>
                 </div>
