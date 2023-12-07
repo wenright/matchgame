@@ -32,7 +32,10 @@ export const lobbyRouter = createTRPCRouter({
           name: input.playerName,
           lobbyId: input.lobbyId,
         },
-        update: {},
+        update: {
+          name: input.playerName,
+          lobbyId: input.lobbyId,
+        },
         where: {
           id: input.playerId,
         },
@@ -58,7 +61,7 @@ export const lobbyRouter = createTRPCRouter({
     }),
 
   create: publicProcedure
-    .input(z.object({ playerName: z.string().min(1), playerId: z.string().uuid() }))
+    .input(z.object({ playerId: z.string().uuid() }))
     .mutation(async ({ ctx, input }) => {
       return await ctx.db.lobby.create({
         data: {
@@ -147,23 +150,23 @@ export const lobbyRouter = createTRPCRouter({
       // Map words to number of matches
       const wordsToMatches = new Map<string, number>();
       for (const player of players) {
-        if (player.submittedWord === null) {
+        if (player.submittedWord === null || player.submittedWord === "") {
           continue;
         }
 
-        wordsToMatches.set(player.submittedWord as string, (wordsToMatches.get(player.submittedWord as string) ?? 0) + 1);
+        wordsToMatches.set(String(player.submittedWord), (wordsToMatches.get(String(player.submittedWord)) ?? 0) + 1);
       }
 
       // Calculate scores
       // Players get 2 points if their word matches exactly 1 other player's word
       // Players get 1 point if their word matches 2 or more other players' words
       for (const player of players) {
-        if (player.submittedWord === null) {
+        if (player.submittedWord === null || player.submittedWord === "") {
           continue;
         }
 
-        const matches = wordsToMatches.get(player.submittedWord as string) ?? 0;
-        const score = matches === 1 ? 2 : matches >= 2 ? 1 : 0;
+        const matches = wordsToMatches.get(String(player.submittedWord)) ?? 0;
+        const score = matches === 2 ? 2 : matches > 2 ? 1 : 0;
 
         await ctx.db.user.update({
           where: {

@@ -4,6 +4,6 @@
 
 @import url("https://fonts.googleapis.com/css2?family=Poppins&display=swap");
 
-html, body, #__next {
+html, main, body, #__next {
     height: 100%;
 }

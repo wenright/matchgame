@@ -2,20 +2,20 @@ import Timer from '~/components/timer';
 import Button from '~/components/button';
 import Input from '~/components/input';
 
-import type { Lobby, User } from '@prisma/client';
+import { faTrashCan, faCheckCircle } from '@fortawesome/free-regular-svg-icons'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 
 import Pusher from 'pusher-js';
 import { useRouter } from 'next/router';
 import { useEffect, useState } from 'react';
-import { v4 } from 'uuid';
 
 import { api } from '~/utils/api';
+import { getOrSetPlayerId } from '~/utils/player';
 
 const LobbyIdPage = () => {
   const router = useRouter();
   const { pathLobbyId } = router.query;
 
-  const [inputLobbyId, setInputLobbyId] = useState<string>(pathLobbyId as string ?? '');
   const [joinedLobbyId, setJoinedLobbyId] = useState<string>('');
   const [playerName, setPlayerName] = useState<string>('');
   const [playerId, setPlayerId] = useState<string>('');
@@ -23,7 +23,6 @@ const LobbyIdPage = () => {
   const [wordSubmitted, setWordSubmitted] = useState<boolean>(false);
 
   const lobbyJoinMutation = api.lobby.join.useMutation();
-  const lobbyCreateMutation = api.lobby.create.useMutation();
   const startGameMutation = api.lobby.startGame.useMutation();
   const nextRoundMutation = api.lobby.nextRound.useMutation();
   const lobbyKickMutation = api.lobby.kick.useMutation();
@@ -32,42 +31,23 @@ const LobbyIdPage = () => {
   const { data: lobby, refetch: refetchLobby } = api.lobby.get.useQuery({ lobbyId: joinedLobbyId }, { enabled: !!joinedLobbyId });
   console.log(lobby);
 
-  const utils = api.useUtils();
-
   Pusher.logToConsole = true;
 
   const joinLobby = async () => {
-    if (!inputLobbyId) {
+    if (pathLobbyId === undefined || typeof pathLobbyId !== 'string') {
       return;
     }
 
     try {
       savePlayerName();
 
-      await lobbyJoinMutation.mutateAsync({ lobbyId: inputLobbyId, playerName: playerName, playerId: playerId });
-      setJoinedLobbyId(inputLobbyId);
+      await lobbyJoinMutation.mutateAsync({ lobbyId: pathLobbyId, playerName: playerName, playerId: playerId });
+      setJoinedLobbyId(pathLobbyId);
     } catch (error) {
       // TODO display error in UI
       console.log(error);
     }
   };
-
-  const createLobby = async () => {
-    try {
-      savePlayerName();
-
-      const newLobby = await lobbyCreateMutation.mutateAsync({ playerName: playerName, playerId: playerId });
-      if (newLobby.id) {
-        console.log(newLobby.id);
-
-        setJoinedLobbyId(newLobby.id);
-      }
-    } catch (error) {
-      // TODO display error in UI
-
-      console.log(error);
-    }
-  }
 
   const startGame = async () => {
     await startGameMutation.mutateAsync({ lobbyId: lobby?.id ?? '' });
@@ -82,7 +62,7 @@ const LobbyIdPage = () => {
   };
 
   const submitWord = (playerId: string, word: string) => async () => {
-    await submitWordMutation.mutateAsync({ playerId: playerId, word: word });
+    await submitWordMutation.mutateAsync({ playerId: playerId, word: word.toLowerCase() });
     setWordSubmitted(true);
   };
 
@@ -90,24 +70,10 @@ const LobbyIdPage = () => {
     localStorage.setItem('playerName', playerName);
   }
 
-  useEffect(() => {
-    if (typeof pathLobbyId !== 'string') {
-      return;
-    }
-
-    setInputLobbyId(pathLobbyId);
-  }, [pathLobbyId]);
-
   useEffect(() => {    
     setPlayerName(localStorage.getItem('playerName') ?? '');
 
-    let playerId = localStorage.getItem('playerId');
-    if (!playerId) {
-      playerId = v4();
-      localStorage.setItem('playerId', playerId);
-    }
-
-    setPlayerId(playerId);
+    setPlayerId(getOrSetPlayerId());
   }, []);
 
   useEffect(() => {
@@ -140,6 +106,8 @@ const LobbyIdPage = () => {
     channel.bind('roundStarted-event', async function () {
       console.log('Round started');
       // await utils.lobby.get.invalidate({});
+      setWordSubmitted(false);
+      setWord('');
       await refetchLobby();
     });
 
@@ -147,18 +115,15 @@ const LobbyIdPage = () => {
   };
 
   return (
-    <div className="bg-stone-900 text-stone-100 h-full font-poppins p-4 flex flex-col justify-center content-center items-center">
+    <div className="bg-stone-900 text-stone-100 h-full font-poppins container flex flex-col justify-center content-center items-center p-8">
       {/* This should be an overlay, preventing players from interacting without first joining themselves */}
       {!lobby &&
         <div className=''>
           <h1 className='text-4xl my-8'>Game</h1>
-          <div className='m-4'>
+          <div className='my-4'>
             <Input value={playerName} stateFn={setPlayerName} />
           </div>
-          <h3>Lobby ID</h3>
-          <Input value={inputLobbyId} stateFn={setInputLobbyId} />
           <Button onClick={joinLobby} text='Join Lobby' />
-          <Button onClick={createLobby} text='Create Lobby' />
         </div>
       }
       {lobby &&
@@ -204,9 +169,9 @@ const LobbyIdPage = () => {
                   <Button onClick={startGame} text='Start' />
                 </div>
               }
-              {lobby.gameStarted &&
+              {lobby.gameStarted && wordSubmitted &&
                 <div>
-                  <Button onClick={nextRound} text='Next round' />
+                  <Button onClick={nextRound} text='End round' />
                 </div>
               }
             </div>
@@ -220,10 +185,10 @@ const LobbyIdPage = () => {
                   <div className='inline-flex'>
                     <div>{player.name} - {player.score}</div>
                     {player.submittedWord &&
-                      <div>✅</div>
+                      <div className='text-green-600 pl-2'><FontAwesomeIcon icon={faCheckCircle} title='Word submitted' /></div>
                     }
                     {lobby.leaderId === playerId &&
-                      <button onClick={kickPlayer(player.id)}>❌</button>
+                      <button onClick={kickPlayer(player.id)} className='text-red-600 mx-2'><FontAwesomeIcon icon={faTrashCan} title='Kick player'/></button>
                     }
                   </div>
                 </li>
