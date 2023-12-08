@@ -123,7 +123,7 @@ const LobbyIdPage = () => {
           <div className='my-4'>
             <Input value={playerName} placeholder='Enter your name' stateFn={setPlayerName} />
           </div>
-          <Button onClick={joinLobby} text='Join Lobby' />
+          <Button onClick={joinLobby} text='Join Lobby' spinnerActive={lobbyJoinMutation.isLoading} />
         </div>
       }
       {lobby &&
@@ -150,7 +150,7 @@ const LobbyIdPage = () => {
                   <h2>Enter your word</h2>
                   <div className='flex flex-col content-center items-center'>
                     <Input value={word} placeholder='Enter your word' stateFn={setWord} />
-                    <Button onClick={submitWord(playerId, word)} text='Submit' />
+                    <Button onClick={submitWord(playerId, word)} text='Submit' spinnerActive={submitWordMutation.isLoading} />
                   </div>
                 </div>
               }
@@ -166,12 +166,12 @@ const LobbyIdPage = () => {
             <div className='flex flex-col content-center items-center'>
               {!lobby.gameStarted && 
                 <div>
-                  <Button onClick={startGame} text='Start' />
+                  <Button onClick={startGame} text='Start' spinnerActive={startGameMutation.isLoading} />
                 </div>
               }
               {lobby.gameStarted && wordSubmitted &&
                 <div>
-                  <Button onClick={nextRound} text='End round' />
+                  <Button onClick={nextRound} text='End round' spinnerActive={nextRoundMutation.isLoading} />
                 </div>
               }
             </div>
@@ -188,7 +188,9 @@ const LobbyIdPage = () => {
                       <div className='text-green-600 pl-2'><FontAwesomeIcon icon={faCheckCircle} title='Word submitted' /></div>
                     }
                     {lobby.leaderId === playerId &&
-                      <button onClick={kickPlayer(player.id)} className='text-red-600 mx-2'><FontAwesomeIcon icon={faTrashCan} title='Kick player'/></button>
+                      <button onClick={kickPlayer(player.id)} className='text-red-600 mx-2'>
+                        <FontAwesomeIcon icon={faTrashCan} title='Kick player'/>
+                      </button>
                     }
                   </div>
                 </li>

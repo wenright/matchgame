@@ -9,6 +9,7 @@ import { getOrSetPlayerId } from "~/utils/player";
 
 export default function Home() {
   const lobbyCreateMutation = api.lobby.create.useMutation();
+  console.log(lobbyCreateMutation.isLoading);
   const router = useRouter();
 
   const createLobby = async () => {
@@ -36,7 +37,7 @@ export default function Home() {
       <main className="flex min-h-screen flex-col items-center justify-center">
         <div className="bg-stone-900 text-stone-100 h-full w-full font-poppins flex flex-col items-center justify-center">
           <h1 className='text-4xl my-8'>Game</h1>
-          <Button onClick={createLobby} text='Create Lobby' />
+          <Button onClick={createLobby} text='Create Lobby' spinnerActive={lobbyCreateMutation.isLoading} />
         </div>
       </main>
     </>
