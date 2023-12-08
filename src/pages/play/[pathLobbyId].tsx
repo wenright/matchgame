@@ -1,16 +1,15 @@
-import Timer from '~/components/timer';
-import Button from '~/components/button';
-import Input from '~/components/input';
-
 import { faTrashCan, faCheckCircle } from '@fortawesome/free-regular-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-
 import Pusher from 'pusher-js';
 import { useRouter } from 'next/router';
 import { useEffect, useState } from 'react';
 
 import { api } from '~/utils/api';
 import { getOrSetPlayerId } from '~/utils/player';
+import Timer from '~/components/timer';
+import Button from '~/components/button';
+import Input from '~/components/input';
+
 
 const LobbyIdPage = () => {
   const router = useRouter();
