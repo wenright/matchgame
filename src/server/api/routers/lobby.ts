@@ -26,7 +26,17 @@ export const lobbyRouter = createTRPCRouter({
   join: publicProcedure
     .input(z.object({ lobbyId: z.string().uuid(), playerName: z.string().min(1), playerId: z.string().uuid() }))
     .mutation(async ({ ctx, input }) => {
-      const existingPlayer = await ctx.db.user.upsert({
+      const lobby = await ctx.db.lobby.findUnique({
+        where: {
+          id: input.lobbyId,
+        },
+      });
+
+      if (!lobby) {
+        throw new TRPCClientError("Lobby ID not found");
+      }
+      
+      await ctx.db.user.upsert({
         create: {
           id: input.playerId,
           name: input.playerName,
@@ -63,6 +73,12 @@ export const lobbyRouter = createTRPCRouter({
   create: publicProcedure
     .input(z.object({ playerId: z.string().uuid() }))
     .mutation(async ({ ctx, input }) => {
+      await ctx.db.lobby.deleteMany({
+        where: {
+          leaderId: input.playerId,
+        },
+      });
+      
       return await ctx.db.lobby.create({
         data: {
           id: v4(),
@@ -220,7 +236,7 @@ export const lobbyRouter = createTRPCRouter({
   submitWord: publicProcedure
     .input(z.object({ playerId: z.string().uuid(), word: z.string() }))
     .mutation(async ({ ctx, input }) => {
-      await ctx.db.user.update({
+      const player = await ctx.db.user.update({
         where: {
           id: input.playerId,
         },
@@ -228,5 +244,9 @@ export const lobbyRouter = createTRPCRouter({
           submittedWord: input.word,
         },
       });
+
+      if (player.lobbyId !== null) {
+        await triggerEvent(player.lobbyId, "lobbyUpdated-event");
+      }
     }),
 });

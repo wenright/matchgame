@@ -1,16 +1,17 @@
 import Timer from '~/components/timer';
 import Button from '~/components/button';
 import Input from '~/components/input';
+import { api } from '~/utils/api';
+import { getOrSetPlayerId } from '~/utils/player';
+
+import { TRPCClientError } from '@trpc/client';
 
 import { faTrashCan, faCheckCircle } from '@fortawesome/free-regular-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-
+import toast, { Toaster } from 'react-hot-toast';
 import Pusher from 'pusher-js';
 import { useRouter } from 'next/router';
 import { useEffect, useState } from 'react';
-
-import { api } from '~/utils/api';
-import { getOrSetPlayerId } from '~/utils/player';
 
 const LobbyIdPage = () => {
   const router = useRouter();
@@ -44,8 +45,9 @@ const LobbyIdPage = () => {
       await lobbyJoinMutation.mutateAsync({ lobbyId: pathLobbyId, playerName: playerName, playerId: playerId });
       setJoinedLobbyId(pathLobbyId);
     } catch (error) {
-      // TODO display error in UI
-      console.log(error);
+      if (error instanceof TRPCClientError) {
+        toast.error(error.message);
+      }
     }
   };
 
@@ -116,6 +118,7 @@ const LobbyIdPage = () => {
 
   return (
     <div className="bg-stone-900 text-stone-100 h-full w-full font-poppins flex flex-col justify-center content-center items-center p-8">
+      <Toaster />
       {/* This should be an overlay, preventing players from interacting without first joining themselves */}
       {!lobby &&
         <div className=''>
@@ -123,7 +126,7 @@ const LobbyIdPage = () => {
           <div className='my-4'>
             <Input value={playerName} placeholder='Enter your name' stateFn={setPlayerName} />
           </div>
-          <Button onClick={joinLobby} text='Join Lobby' spinnerActive={lobbyJoinMutation.isLoading} />
+          <Button onClick={joinLobby} text='Join Lobby' loading={lobbyJoinMutation.isLoading} />
         </div>
       }
       {lobby &&
@@ -150,7 +153,7 @@ const LobbyIdPage = () => {
                   <h2>Enter your word</h2>
                   <div className='flex flex-col content-center items-center'>
                     <Input value={word} placeholder='Enter your word' stateFn={setWord} />
-                    <Button onClick={submitWord(playerId, word)} text='Submit' spinnerActive={submitWordMutation.isLoading} />
+                    <Button onClick={submitWord(playerId, word)} text='Submit' loading={submitWordMutation.isLoading} />
                   </div>
                 </div>
               }
@@ -166,12 +169,12 @@ const LobbyIdPage = () => {
             <div className='flex flex-col content-center items-center'>
               {!lobby.gameStarted && 
                 <div>
-                  <Button onClick={startGame} text='Start' spinnerActive={startGameMutation.isLoading} />
+                  <Button onClick={startGame} text='Start' loading={startGameMutation.isLoading} />
                 </div>
               }
               {lobby.gameStarted && wordSubmitted &&
                 <div>
-                  <Button onClick={nextRound} text='End round' spinnerActive={nextRoundMutation.isLoading} />
+                  <Button onClick={nextRound} text='End round' loading={nextRoundMutation.isLoading} />
                 </div>
               }
             </div>
