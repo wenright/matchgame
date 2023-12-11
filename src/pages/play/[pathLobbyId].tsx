@@ -1,6 +1,7 @@
 import Timer from '~/components/timer';
 import Button from '~/components/button';
 import Input from '~/components/input';
+import { Vector3 } from '~/utils/vector3';
 import { api } from '~/utils/api';
 import { getOrSetPlayerId } from '~/utils/player';
 
@@ -10,8 +11,9 @@ import { faTrashCan, faCheckCircle } from '@fortawesome/free-regular-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import toast, { Toaster } from 'react-hot-toast';
 import Pusher from 'pusher-js';
+import { type Channel } from 'pusher-js';
 import { useRouter } from 'next/router';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 
 const LobbyIdPage = () => {
   const router = useRouter();
@@ -22,6 +24,13 @@ const LobbyIdPage = () => {
   const [playerId, setPlayerId] = useState<string>('');
   const [word, setWord] = useState<string>('');
   const [wordSubmitted, setWordSubmitted] = useState<boolean>(false);
+  const [showWord, setShowWord] = useState<boolean>(false);
+  const [flashGreen, setFlashGreen] = useState<boolean>(false);
+  const [flashGrey, setFlashGrey] = useState<boolean>(false);
+  
+  const pusherChannel = useRef<Channel | null>(null);
+  const orientation = useRef<Vector3>(new Vector3(0, 0, 0));
+  const flipped = useRef<boolean>(false);
 
   const lobbyJoinMutation = api.lobby.join.useMutation();
   const startGameMutation = api.lobby.startGame.useMutation();
@@ -52,20 +61,44 @@ const LobbyIdPage = () => {
   };
 
   const startGame = async () => {
-    await startGameMutation.mutateAsync({ lobbyId: lobby?.id ?? '' });
+    try {
+      await startGameMutation.mutateAsync({ lobbyId: lobby?.id ?? '' });
+    } catch (error) {
+      if (error instanceof TRPCClientError) {
+        toast.error(error.message);
+      }
+    }
   }
 
   const nextRound = async () => {
-    await nextRoundMutation.mutateAsync({ lobbyId: lobby?.id ?? '' });
+    try {
+      await nextRoundMutation.mutateAsync({ lobbyId: lobby?.id ?? '' });
+    } catch (error) {
+      if (error instanceof TRPCClientError) {
+        toast.error(error.message);
+      }
+    }
   }
 
   const kickPlayer = (playerId: string) => async () => {
-    await lobbyKickMutation.mutateAsync({ lobbyId: lobby?.id ?? '', playerId: playerId });
+    try {
+      await lobbyKickMutation.mutateAsync({ lobbyId: lobby?.id ?? '', playerId: playerId });
+    } catch (error) {
+      if (error instanceof TRPCClientError) {
+        toast.error(error.message);
+      }
+    }
   };
 
   const submitWord = (playerId: string, word: string) => async () => {
-    await submitWordMutation.mutateAsync({ playerId: playerId, word: word.toLowerCase() });
-    setWordSubmitted(true);
+    try {
+      await submitWordMutation.mutateAsync({ playerId: playerId, word: word.toLowerCase() });
+      setWordSubmitted(true);
+    } catch (error) {
+      if (error instanceof TRPCClientError) {
+        toast.error(error.message);
+      }
+    }
   };
 
   const savePlayerName = () => {
@@ -76,20 +109,39 @@ const LobbyIdPage = () => {
     setPlayerName(localStorage.getItem('playerName') ?? '');
 
     setPlayerId(getOrSetPlayerId());
+
+    addEventListener("devicemotion", (event) => {
+      const motion = new Vector3(event.rotationRate?.alpha ?? 0, event.rotationRate?.beta ?? 0, event.rotationRate?.gamma ?? 0);
+      orientation.current = orientation.current.scale(0.75).add(motion.scale(0.25));
+
+      if (orientation.current.magnitude() > 200) {
+        if (!flipped.current && pusherChannel.current) {
+          pusherChannel.current.trigger('client-orientation-event', {
+            submittedWord: wordSubmitted,
+          });
+
+          flipped.current = true;
+        }
+      }
+    });
+
+    return () => {
+      removeEventListener("devicemotion", () => ({}));
+    }
   }, []);
 
   useEffect(() => {
-    const channel = initPusher();
+    pusherChannel.current = initPusher();
 
     return () => {
-      channel?.unbind_all();
+      pusherChannel.current?.unbind_all();
     };
   }, [joinedLobbyId]);
 
-  const initPusher = () => {
+  const initPusher = (): Channel | null => {
     if (!joinedLobbyId) {
       console.log('No lobby ID, cannot subscribe to pusher');
-      return;
+      return null;
     }
     
     const pusher = new Pusher('622c76977c5377aae795', {
@@ -101,23 +153,45 @@ const LobbyIdPage = () => {
 
     channel.bind('lobbyUpdated-event', async function () {
       console.log('Lobby updated');
-      // await utils.lobby.get.invalidate({});
       await refetchLobby();
     });
 
     channel.bind('roundStarted-event', async function () {
       console.log('Round started');
-      // await utils.lobby.get.invalidate({});
       setWordSubmitted(false);
       setWord('');
+      setShowWord(false);
       await refetchLobby();
+    });
+
+    channel.bind('roundEnded-event', async function () {
+      console.log('Round ended');
+      setShowWord(true);
+      await refetchLobby();
+    });
+
+    channel.bind('client-orientation-event', function (data: { submittedWord: string }) {
+      // TODO need to handle show order, not flashing if haven't shown or matched with someone who hasn't shown
+      if (data.submittedWord === word) {
+        setFlashGreen(true);
+      }
     });
 
     return channel;
   };
 
   return (
-    <div className="bg-stone-900 text-stone-100 h-full w-full font-poppins flex flex-col justify-center content-center items-center p-8">
+    <div
+      className={`${
+        flashGreen && "animate-flashGreen"
+      } ${
+        flashGrey && "animate-flashGrey"
+      } bg-stone-900 text-stone-100 h-full w-full font-poppins flex flex-col justify-center items-center p-8`}
+      onAnimationEnd={() => {
+        setFlashGreen(false);
+        setFlashGrey(false);
+      }}
+    >
       <Toaster />
       {/* This should be an overlay, preventing players from interacting without first joining themselves */}
       {!lobby &&
@@ -131,18 +205,10 @@ const LobbyIdPage = () => {
       }
       {lobby &&
         <div>
-          <h1>Lobby ID: {lobby.id}</h1>
-          {playerName &&
-            <div>
-              <h2>Joined as '{playerName}'</h2>
-            </div>
-          }
-          <h2>Current word: {lobby.currentWord}</h2>
           {lobby.gameStarted && 
             <div>
               {lobby.roundExpiration &&
-                <div>
-                  <h2>Time:</h2>
+                <div className='fixed text-center text-2xl inset-x-0 top-0 m-4'>
                   <Timer expiration={lobby.roundExpiration} />
                 </div>
               }
@@ -150,16 +216,27 @@ const LobbyIdPage = () => {
               {/* Game controls */}
               {!wordSubmitted &&
                 <div>
-                  <h2>Enter your word</h2>
                   <div className='flex flex-col content-center items-center'>
-                    <Input value={word} placeholder='Enter your word' stateFn={setWord} />
+                    <div className={'flex items-center text-lg ' + (lobby.currentWord?.startsWith('_') ? 'flex-row' : 'flex-row-reverse')}>
+                      <Input className='w-1/2' value={word} placeholder='' stateFn={setWord} />
+                      <h2 className={'text-lg w-1/2 border-2 border-transparent border-b-stone-700 text-stone-500 ' + (lobby.currentWord?.startsWith('_') ? '' : 'text-right')}>{lobby.currentWord?.replace('_', '')}</h2>
+                    </div>
                     <Button onClick={submitWord(playerId, word)} text='Submit' loading={submitWordMutation.isLoading} />
                   </div>
                 </div>
               }
               {wordSubmitted &&
                 <div>
-                  <h2>Word submitted, waiting for other players...</h2>
+                  {showWord &&
+                    <div>
+                      <h2 className='text-xl'>{word}</h2>
+                    </div>
+                  }
+                  {!showWord &&
+                    <div>
+                      <h2>Word submitted, waiting for other players...</h2>
+                    </div>
+                  }
                 </div>
               }
             </div>
@@ -167,7 +244,7 @@ const LobbyIdPage = () => {
           {/* Leader controls */}
           {lobby.leaderId === playerId &&
             <div className='flex flex-col content-center items-center'>
-              {!lobby.gameStarted && 
+              {!lobby.gameStarted &&
                 <div>
                   <Button onClick={startGame} text='Start' loading={startGameMutation.isLoading} />
                 </div>

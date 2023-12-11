@@ -161,7 +161,9 @@ export const lobbyRouter = createTRPCRouter({
           continue;
         }
 
-        wordsToMatches.set(String(player.submittedWord), (wordsToMatches.get(String(player.submittedWord)) ?? 0) + 1);
+        const word = String(player.submittedWord).toLowerCase().trim();
+
+        wordsToMatches.set(String(word), (wordsToMatches.get(String(word)) ?? 0) + 1);
       }
 
       // Calculate scores
@@ -172,7 +174,9 @@ export const lobbyRouter = createTRPCRouter({
           continue;
         }
 
-        const matches = wordsToMatches.get(String(player.submittedWord)) ?? 0;
+        const word = String(player.submittedWord).toLowerCase().trim();
+
+        const matches = wordsToMatches.get(String(word)) ?? 0;
         const score = matches === 2 ? 2 : matches > 2 ? 1 : 0;
 
         await ctx.db.user.update({
@@ -230,7 +234,7 @@ export const lobbyRouter = createTRPCRouter({
         throw new TRPCClientError("Lobby not found");
       }
       
-      await triggerEvent(input.lobbyId, "roundStarted-event");
+      await triggerEvent(input.lobbyId, "roundEnded-event");
     }),
 
   submitWord: publicProcedure

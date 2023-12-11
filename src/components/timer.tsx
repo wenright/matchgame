@@ -21,7 +21,9 @@ const Timer = (props: { expiration: Date }) => {
 
     return (
         <div>
-            <div>{(ms / 1000).toFixed(0)}</div>
+            {ms >= 0 &&
+                <div>{(ms / 1000).toFixed(0)}</div>
+            }
         </div>
     );
 };

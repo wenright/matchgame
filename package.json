@@ -10,7 +10,8 @@
     "dev": "next dev",
     "postinstall": "prisma generate",
     "lint": "next lint",
-    "start": "next start"
+    "start": "next start",
+    "https": "npm run dev & npx local-ssl-proxy --key localhost-key.pem --cert localhost.pem --source 3001 --target 3000"
   },
   "dependencies": {
     "@fortawesome/fontawesome-svg-core": "^6.5.1",
