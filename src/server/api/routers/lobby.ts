@@ -45,6 +45,7 @@ export const lobbyRouter = createTRPCRouter({
         update: {
           name: input.playerName,
           lobbyId: input.lobbyId,
+          score: 0,
         },
         where: {
           id: input.playerId,

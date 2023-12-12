@@ -1,19 +1,19 @@
 import Timer from '~/components/timer';
 import Button from '~/components/button';
 import Input from '~/components/input';
+import Modal from '~/components/modal';
 import { Vector3 } from '~/utils/vector3';
 import { api } from '~/utils/api';
 import { getOrSetPlayerId } from '~/utils/player';
 
 import { TRPCClientError } from '@trpc/client';
-
-import { faTrashCan, faCheckCircle } from '@fortawesome/free-regular-svg-icons'
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import toast, { Toaster } from 'react-hot-toast';
 import Pusher from 'pusher-js';
 import { type Channel } from 'pusher-js';
 import { useRouter } from 'next/router';
 import { useEffect, useState, useRef } from 'react';
+import PlayerList from '~/components/playerlist';
+import { UserPlus } from 'react-feather';
 
 const LobbyIdPage = () => {
   const router = useRouter();
@@ -22,6 +22,7 @@ const LobbyIdPage = () => {
   const [joinedLobbyId, setJoinedLobbyId] = useState<string>('');
   const [playerName, setPlayerName] = useState<string>('');
   const [playerId, setPlayerId] = useState<string>('');
+  const [playerListIsOpen, setPlayerListIsOpen] = useState<boolean>(false);
   const [word, setWord] = useState<string>('');
   const [wordSubmitted, setWordSubmitted] = useState<boolean>(false);
   const [showWord, setShowWord] = useState<boolean>(false);
@@ -35,7 +36,6 @@ const LobbyIdPage = () => {
   const lobbyJoinMutation = api.lobby.join.useMutation();
   const startRoundMutation = api.lobby.startRound.useMutation();
   const endRoundMutation = api.lobby.endRound.useMutation();
-  const lobbyKickMutation = api.lobby.kick.useMutation();
   const submitWordMutation = api.lobby.submitWord.useMutation();
 
   const { data: lobby, refetch: refetchLobby } = api.lobby.get.useQuery({ lobbyId: joinedLobbyId }, { enabled: !!joinedLobbyId });
@@ -80,16 +80,6 @@ const LobbyIdPage = () => {
     }
   }
 
-  const kickPlayer = (playerId: string) => async () => {
-    try {
-      await lobbyKickMutation.mutateAsync({ lobbyId: lobby?.id ?? '', playerId: playerId });
-    } catch (error) {
-      if (error instanceof TRPCClientError) {
-        toast.error(error.message);
-      }
-    }
-  };
-
   const submitWord = (playerId: string, word: string) => async () => {
     try {
       await submitWordMutation.mutateAsync({ playerId: playerId, word: word.toLowerCase() });
@@ -103,6 +93,10 @@ const LobbyIdPage = () => {
 
   const savePlayerName = () => {
     localStorage.setItem('playerName', playerName);
+  }
+
+  const setModalIsOpen = (isOpen: boolean) => {
+    setPlayerListIsOpen(isOpen);
   }
 
   useEffect(() => {    
@@ -193,6 +187,8 @@ const LobbyIdPage = () => {
       }}
     >
       <Toaster />
+      <Modal title="Players" open={playerListIsOpen} setOpen={setModalIsOpen} body={<PlayerList lobbyId={pathLobbyId as string} playerId={playerId} />} />
+
       {/* This should be an overlay, preventing players from interacting without first joining themselves */}
       {!lobby &&
         <div className=''>
@@ -205,6 +201,10 @@ const LobbyIdPage = () => {
       }
       {lobby &&
         <div>
+          <button onClick={() => setPlayerListIsOpen(true)} className='fixed right-0 top-0 text-stone-200 m-4'>
+            <UserPlus size={24} />
+          </button>
+
           {lobby.gameStarted && 
             <div>
               {lobby.roundExpiration &&
@@ -261,27 +261,6 @@ const LobbyIdPage = () => {
               }
             </div>
           }
-          {/* Player list */}
-          <h2>Players</h2>
-          <ul>
-            {lobby?.players.map((player) => {
-              return (
-                <li key={player.id} className='flex'>
-                  <div className='inline-flex'>
-                    <div>{player.name} - {player.score}</div>
-                    {player.submittedWord &&
-                      <div className='text-green-600 pl-2'><FontAwesomeIcon icon={faCheckCircle} title='Word submitted' /></div>
-                    }
-                    {lobby.leaderId === playerId &&
-                      <button onClick={kickPlayer(player.id)} className='text-red-600 mx-2'>
-                        <FontAwesomeIcon icon={faTrashCan} title='Kick player'/>
-                      </button>
-                    }
-                  </div>
-                </li>
-              );
-            })}
-          </ul>
         </div>
       }
     </div>
