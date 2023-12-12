@@ -33,8 +33,8 @@ const LobbyIdPage = () => {
   const flipped = useRef<boolean>(false);
 
   const lobbyJoinMutation = api.lobby.join.useMutation();
-  const startGameMutation = api.lobby.startGame.useMutation();
-  const nextRoundMutation = api.lobby.nextRound.useMutation();
+  const startRoundMutation = api.lobby.startRound.useMutation();
+  const endRoundMutation = api.lobby.endRound.useMutation();
   const lobbyKickMutation = api.lobby.kick.useMutation();
   const submitWordMutation = api.lobby.submitWord.useMutation();
 
@@ -60,9 +60,9 @@ const LobbyIdPage = () => {
     }
   };
 
-  const startGame = async () => {
+  const startRound = async () => {
     try {
-      await startGameMutation.mutateAsync({ lobbyId: lobby?.id ?? '' });
+      await startRoundMutation.mutateAsync({ lobbyId: lobby?.id ?? '' });
     } catch (error) {
       if (error instanceof TRPCClientError) {
         toast.error(error.message);
@@ -70,9 +70,9 @@ const LobbyIdPage = () => {
     }
   }
 
-  const nextRound = async () => {
+  const endRound = async () => {
     try {
-      await nextRoundMutation.mutateAsync({ lobbyId: lobby?.id ?? '' });
+      await endRoundMutation.mutateAsync({ lobbyId: lobby?.id ?? '' });
     } catch (error) {
       if (error instanceof TRPCClientError) {
         toast.error(error.message);
@@ -229,7 +229,7 @@ const LobbyIdPage = () => {
                 <div>
                   {showWord &&
                     <div>
-                      <h2 className='text-xl'>{word}</h2>
+                      <h2 className='text-4xl'>{word}</h2>
                     </div>
                   }
                   {!showWord &&
@@ -246,12 +246,17 @@ const LobbyIdPage = () => {
             <div className='flex flex-col content-center items-center'>
               {!lobby.gameStarted &&
                 <div>
-                  <Button onClick={startGame} text='Start' loading={startGameMutation.isLoading} />
+                  <Button onClick={startRound} text='Start' loading={startRoundMutation.isLoading} />
                 </div>
               }
               {lobby.gameStarted && wordSubmitted &&
                 <div>
-                  <Button onClick={nextRound} text='End round' loading={nextRoundMutation.isLoading} />
+                  {showWord &&
+                    <Button onClick={startRound} text='Start round' loading={startRoundMutation.isLoading} />
+                  }
+                  {!showWord &&
+                    <Button onClick={endRound} text='End round' loading={endRoundMutation.isLoading} />
+                  }                  
                 </div>
               }
             </div>

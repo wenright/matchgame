@@ -121,31 +121,58 @@ export const lobbyRouter = createTRPCRouter({
     }),
 
   // TODO for these, maybe add some authentication, so only the host can start the game
-  startGame: publicProcedure
+  startRound: publicProcedure
     .input(z.object({ lobbyId: z.string().uuid() }))
     .mutation(async ({ ctx, input }) => {
-      // Do we need to check lobby exists?
+      const players = await ctx.db.user.findMany({
+        where: {
+          lobbyId: input.lobbyId,
+        },
+      });
 
-      const word = getRandomWord([]);
+      // Clear players' words
+      for (const player of players) {
+        await ctx.db.user.update({
+          where: {
+            id: player.id,
+          },
+          data: {
+            submittedWord: null,
+          },
+        });
+      }
+
+      const previousWords = await ctx.db.lobby.findUnique({
+        where: {
+          id: input.lobbyId,
+        },
+        select: {
+          previousWords: true,
+        },
+      });
+
+      const newWord = getRandomWord(previousWords?.previousWords ?? []);
 
       await ctx.db.lobby.update({
         where: {
           id: input.lobbyId,
         },
         data: {
-          currentWord: word,
+          currentWord: newWord,
           previousWords: {
-            push: word,
+            push: newWord,
           },
-          roundExpiration: new Date(Date.now() + 1000 * ROUND_TIMER),
           gameStarted: true,
+        },
+        include: {
+          players: true,
         },
       });
 
       await triggerEvent(input.lobbyId, "roundStarted-event");
     }),
 
-  nextRound: publicProcedure
+  endRound: publicProcedure
     .input(z.object({ lobbyId: z.string().uuid() }))
     .mutation(async ({ ctx, input }) => {
       const players = await ctx.db.user.findMany({
@@ -189,49 +216,6 @@ export const lobbyRouter = createTRPCRouter({
             },
           },
         });
-      }
-
-      // Clear players' words
-      for (const player of players) {
-        await ctx.db.user.update({
-          where: {
-            id: player.id,
-          },
-          data: {
-            submittedWord: null,
-          },
-        });
-      }
-      
-      const previousWords = await ctx.db.lobby.findUnique({
-        where: {
-          id: input.lobbyId,
-        },
-        select: {
-          previousWords: true,
-        },
-      });
-      
-      const newWord = getRandomWord(previousWords?.previousWords ?? []);
-      
-      const lobby = await ctx.db.lobby.update({
-        where: {
-          id: input.lobbyId,
-        },
-        data: {
-          currentWord: newWord,
-          previousWords: {
-            push: newWord,
-          },
-          roundExpiration: new Date(Date.now() + 1000 * ROUND_TIMER),
-        },
-        include: {
-          players: true,
-        },
-      });
-
-      if (!lobby) {
-        throw new TRPCClientError("Lobby not found");
       }
       
       await triggerEvent(input.lobbyId, "roundEnded-event");
