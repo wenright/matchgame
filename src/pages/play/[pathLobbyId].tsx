@@ -109,7 +109,8 @@ const LobbyIdPage = () => {
       orientation.current = orientation.current.scale(0.75).add(motion.scale(0.25));
 
       if (orientation.current.magnitude() > 200) {
-        if (!flipped.current && pusherChannel.current) {
+        // TODO also need to check round ended?
+        if (wordSubmitted && !flipped.current && pusherChannel.current) {
           pusherChannel.current.trigger('client-orientation-event', {
             submittedWord: wordSubmitted,
           });
@@ -166,9 +167,9 @@ const LobbyIdPage = () => {
 
     channel.bind('client-orientation-event', function (data: { submittedWord: string }) {
       // TODO need to handle show order, not flashing if haven't shown or matched with someone who hasn't shown
-      if (data.submittedWord === word) {
+      // if (data.submittedWord === word) {
         setFlashGreen(true);
-      }
+      // }
     });
 
     return channel;
@@ -219,7 +220,7 @@ const LobbyIdPage = () => {
                   <div className='flex flex-col content-center items-center'>
                     <div className={'flex items-center text-lg ' + (lobby.currentWord?.startsWith('_') ? 'flex-row' : 'flex-row-reverse')}>
                       <Input className='w-1/2' value={word} placeholder='' stateFn={setWord} />
-                      <h2 className={'text-lg w-1/2 border-2 border-transparent border-b-stone-700 text-stone-500 ' + (lobby.currentWord?.startsWith('_') ? '' : 'text-right')}>{lobby.currentWord?.replace('_', '')}</h2>
+                      <h2 className={'text-lg w-1/2 border-2 border-transparent border-b-yellow-700 text-yellow-500 ' + (lobby.currentWord?.startsWith('_') ? '' : 'text-right')}>{lobby.currentWord?.replace('_', '')}</h2>
                     </div>
                     <Button onClick={submitWord(playerId, word)} text='Submit' loading={submitWordMutation.isLoading} />
                   </div>
