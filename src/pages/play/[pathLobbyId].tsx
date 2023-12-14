@@ -53,6 +53,7 @@ const LobbyIdPage = () => {
 
       await lobbyJoinMutation.mutateAsync({ lobbyId: pathLobbyId, playerName: playerName, playerId: playerId });
       setJoinedLobbyId(pathLobbyId);
+      setWordSubmitted(lobby?.players?.find(p => p.id === playerId)?.submittedWord !== '' ?? false);
     } catch (error) {
       if (error instanceof TRPCClientError) {
         toast.error(error.message);
@@ -103,7 +104,9 @@ const LobbyIdPage = () => {
     setPlayerName(localStorage.getItem('playerName') ?? '');
 
     setPlayerId(getOrSetPlayerId());
+  }, []);
 
+  useEffect(() => {
     addEventListener("devicemotion", (event) => {
       const motion = new Vector3(event.rotationRate?.alpha ?? 0, event.rotationRate?.beta ?? 0, event.rotationRate?.gamma ?? 0);
       orientation.current = orientation.current.scale(0.75).add(motion.scale(0.25));
@@ -123,7 +126,7 @@ const LobbyIdPage = () => {
     return () => {
       removeEventListener("devicemotion", () => ({}));
     }
-  }, []);
+  }, [wordSubmitted]);
 
   useEffect(() => {
     pusherChannel.current = initPusher();
@@ -167,6 +170,7 @@ const LobbyIdPage = () => {
 
     channel.bind('client-orientation-event', function (data: { submittedWord: string }) {
       // TODO need to handle show order, not flashing if haven't shown or matched with someone who hasn't shown
+      console.log("client call");
       // if (data.submittedWord === word) {
         setFlashGreen(true);
       // }
@@ -187,6 +191,7 @@ const LobbyIdPage = () => {
         setFlashGrey(false);
       }}
     >
+      <div>{flipped.current ? 'flipped' : 'not flipped'}</div>
       <Toaster />
       <Modal title="Players" open={playerListIsOpen} setOpen={setModalIsOpen} body={<PlayerList lobbyId={pathLobbyId as string} playerId={playerId} />} />
 
