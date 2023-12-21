@@ -114,10 +114,6 @@ const LobbyIdPage = () => {
       if (orientation.current.magnitude() > 200) {
         // TODO also need to check round ended?
         if (wordSubmitted && !flipped.current && pusherChannel.current) {
-          pusherChannel.current.trigger('client-orientation-event', {
-            submittedWord: wordSubmitted,
-          });
-
           flipped.current = true;
         }
       }
@@ -166,14 +162,6 @@ const LobbyIdPage = () => {
       console.log('Round ended');
       setShowWord(true);
       await refetchLobby();
-    });
-
-    channel.bind('client-orientation-event', function (data: { submittedWord: string }) {
-      // TODO need to handle show order, not flashing if haven't shown or matched with someone who hasn't shown
-      console.log("client call");
-      // if (data.submittedWord === word) {
-        setFlashGreen(true);
-      // }
     });
 
     return channel;
