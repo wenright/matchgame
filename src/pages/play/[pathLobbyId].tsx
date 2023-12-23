@@ -1,9 +1,11 @@
-import Timer from '~/components/timer';
+import { api } from '~/utils/api';
+import { getOrSetPlayerId } from '~/utils/player';
+
 import Button from '~/components/button';
 import Input from '~/components/input';
 import Modal from '~/components/modal';
-import { api } from '~/utils/api';
-import { getOrSetPlayerId } from '~/utils/player';
+import LeaderControls from '~/components/leadercontrols';
+import GameControls from '~/components/gamecontrols';
 
 import Pusher from 'pusher-js';
 import { type Channel } from 'pusher-js';
@@ -30,9 +32,6 @@ const LobbyIdPage = () => {
   const pusherChannel = useRef<Channel | null>(null);
 
   const lobbyJoinMutation = api.lobby.join.useMutation();
-  const startRoundMutation = api.lobby.startRound.useMutation();
-  const endRoundMutation = api.lobby.endRound.useMutation();
-  const submitWordMutation = api.lobby.submitWord.useMutation();
 
   const { data: lobby, refetch: refetchLobby } = api.lobby.get.useQuery({ lobbyId: joinedLobbyId }, { enabled: !!joinedLobbyId });
   console.log(lobby);
@@ -51,17 +50,6 @@ const LobbyIdPage = () => {
       setJoinedLobbyId(pathLobbyId);
       setWordSubmitted(lobby?.players?.find(p => p.id === playerId)?.submittedWord !== '' ?? false);
 
-    } catch (error) {
-      console.log(error);
-    }
-  };
-
-  const submitWord = (playerId: string, word: string) => async () => {
-    console.log("submitting word");
-    console.log(word);
-    try {
-      await submitWordMutation.mutateAsync({ playerId: playerId, word: word.toLowerCase() });
-      setWordSubmitted(true);
     } catch (error) {
       console.log(error);
     }
@@ -143,16 +131,7 @@ const LobbyIdPage = () => {
       } />
 
       {/* This should be an overlay, preventing players from interacting without first joining themselves */}
-      {!lobby &&
-        <div className=''>
-          <h1 className='text-4xl my-8'>Game</h1>
-          <div className='my-4'>
-            <Input value={playerName} placeholder='Enter your name' stateFn={setPlayerName} onSubmit={joinLobby} />
-          </div>
-          <Button onClick={joinLobby} text='Join Lobby' loading={lobbyJoinMutation.isLoading} />
-        </div>
-      }
-      {lobby &&
+      {lobby ?
         <div className='flex flex-col content-center justify-center h-full'>
           <button onClick={() => setPlayerListIsOpen(true)} className='fixed right-0 top-0 text-stone-200 m-4'>
             <UserPlus size={24} />
@@ -163,67 +142,17 @@ const LobbyIdPage = () => {
               <h1 className='text-4xl my-8'>Waiting for game to start</h1>
             </div>
           }
-          {lobby.gameStarted &&
-            <div className='flex items-center h-full'>
-              {lobby.roundExpiration &&
-                <div className='fixed text-center text-2xl inset-x-0 top-0 m-4'>
-                  <Timer expiration={lobby.roundExpiration} />
-                </div>
-              }
-
-              {/* Game controls */}
-              {wordSubmitted ? (
-                <div>
-                  {showWord &&
-                    <div>
-                      <h2 className='text-9xl font-bold text-center'>{word}</h2>
-                    </div>
-                  }
-                  {!showWord &&
-                    <div>
-                      <h2>Word submitted, waiting for other players...</h2>
-                      <PlayerList className='m-8' lobbyId={pathLobbyId as string} playerId={playerId} />
-                    </div>
-                  }
-                </div>
-              ) : (
-                <div>
-                  <div className='flex flex-col content-center items-center'>
-                    <div className={'flex items-center text-lg ' + (lobby.currentWord?.startsWith('_') ? 'flex-row' : 'flex-row-reverse')}>
-                      <Input className='w-1/2' value={word} placeholder='' stateFn={setWord} onSubmit={submitWord(playerId, word)} />
-                      <h2 className={'text-lg w-1/2 border-2 border-transparent border-b-yellow-700 text-yellow-500 ' + (lobby.currentWord?.startsWith('_') ? '' : 'text-right')}>{lobby.currentWord?.replace('_', '')}</h2>
-                    </div>
-                    <div className='fixed inset-x-0 bottom-0'>
-                      <Button onClick={submitWord(playerId, word)} text='Submit' loading={submitWordMutation.isLoading} />
-                    </div>
-                  </div>
-                </div>
-
-              )}
-            </div>
-          }
-          {/* Leader controls */}
-          {lobby.leaderId === playerId &&
-            <div className='fixed inset-x-0 bottom-0 text-stone-200 m-4'>
-              <div className='flex justify-center'>
-                {!lobby.gameStarted &&
-                  <div>
-                    <Button onClick={() => startRoundMutation.mutate({ lobbyId: lobby?.id ?? '' })} text='Start' loading={startRoundMutation.isLoading} />
-                  </div>
-                }
-                {lobby.gameStarted && wordSubmitted &&
-                  <div>
-                    {showWord &&
-                      <Button onClick={() => startRoundMutation.mutateAsync({ lobbyId: lobby?.id ?? '' })} text='Next round' loading={startRoundMutation.isLoading} />
-                    }
-                    {!showWord &&
-                      <Button onClick={() => endRoundMutation.mutateAsync({ lobbyId: lobby?.id ?? '' })} text='End round' loading={endRoundMutation.isLoading} />
-                    }
-                  </div>
-                }
-              </div>
-            </div>
-          }
+          
+          <GameControls lobby={lobby} playerId={playerId} word={word} setWord={setWord} wordSubmitted={wordSubmitted} setWordSubmitted={setWordSubmitted} showWord={showWord} />
+          <LeaderControls lobby={lobby} playerId={playerId} wordSubmitted={wordSubmitted} showWord={showWord} />
+        </div>
+        :
+        <div className=''>
+          <h1 className='text-4xl my-8'>Game</h1>
+          <div className='my-4'>
+            <Input value={playerName} placeholder='Enter your name' stateFn={setPlayerName} onSubmit={joinLobby} />
+          </div>
+          <Button onClick={joinLobby} text='Join Lobby' loading={lobbyJoinMutation.isLoading} />
         </div>
       }
     </div>
