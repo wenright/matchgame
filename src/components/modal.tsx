@@ -1,5 +1,5 @@
 import { Dialog, Transition } from '@headlessui/react'
-import { Fragment, ReactElement, useState } from 'react'
+import { Fragment, type ReactElement } from 'react'
 
 import { X } from 'react-feather'
 

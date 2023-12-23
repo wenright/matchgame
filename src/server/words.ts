@@ -1,7 +1,7 @@
 const Words: string[] = [
     "Rain_",
     "Foot_",
-    "Air_",
+    "_Air",
     "Fire_",
 ];
 

@@ -4,12 +4,12 @@ import { api } from '~/utils/api';
 import type { Lobby } from "@prisma/client";
 
 const LeaderControls = (props: {lobby: Lobby, playerId: string, wordSubmitted: boolean, showWord: boolean}) => {
+  const startRoundMutation = api.lobby.startRound.useMutation();
+  const endRoundMutation = api.lobby.endRound.useMutation();
+
   if (props.lobby.leaderId !== props.playerId) {
     return;
   }
-
-  const startRoundMutation = api.lobby.startRound.useMutation();
-  const endRoundMutation = api.lobby.endRound.useMutation();
   
   return (
     <div className='fixed inset-x-0 bottom-0 text-stone-200 m-4'>

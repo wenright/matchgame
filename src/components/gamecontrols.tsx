@@ -7,13 +7,9 @@ import Input from '~/components/input';
 
 import { api } from '~/utils/api';
 
-import { useEffect, useState, useRef, SetStateAction, Dispatch } from 'react';
+import type { SetStateAction, Dispatch } from 'react';
 
 const GameControls = (props: {lobby: Lobby, playerId: string, word: string, setWord: Dispatch<SetStateAction<string>>, wordSubmitted: boolean, setWordSubmitted: Dispatch<SetStateAction<boolean>>, showWord: boolean}) => {
-  if (!props.lobby.gameStarted) {
-    return;
-  }
-
   const submitWordMutation = api.lobby.submitWord.useMutation();
 
   const submitWord = (playerId: string, word: string) => async () => {
@@ -26,6 +22,10 @@ const GameControls = (props: {lobby: Lobby, playerId: string, word: string, setW
       console.log(error);
     }
   };
+
+  if (!props.lobby.gameStarted) {
+    return;
+  }
   
   return (
     <div className='flex items-center h-full'>
