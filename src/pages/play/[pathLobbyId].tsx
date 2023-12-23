@@ -11,9 +11,10 @@ import toast, { Toaster } from 'react-hot-toast';
 import Pusher from 'pusher-js';
 import { type Channel } from 'pusher-js';
 import { useRouter } from 'next/router';
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, use } from 'react';
 import PlayerList from '~/components/playerlist';
 import { UserPlus } from 'react-feather';
+import QRCode from 'react-qr-code';
 
 const LobbyIdPage = () => {
   const router = useRouter();
@@ -26,12 +27,9 @@ const LobbyIdPage = () => {
   const [word, setWord] = useState<string>('');
   const [wordSubmitted, setWordSubmitted] = useState<boolean>(false);
   const [showWord, setShowWord] = useState<boolean>(false);
-  const [flashGreen, setFlashGreen] = useState<boolean>(false);
-  const [flashGrey, setFlashGrey] = useState<boolean>(false);
+  const [lobbyUrl, setLobbyUrl] = useState<string>('');
   
   const pusherChannel = useRef<Channel | null>(null);
-  const orientation = useRef<Vector3>(new Vector3(0, 0, 0));
-  const flipped = useRef<boolean>(false);
 
   const lobbyJoinMutation = api.lobby.join.useMutation();
   const startRoundMutation = api.lobby.startRound.useMutation();
@@ -54,6 +52,7 @@ const LobbyIdPage = () => {
       await lobbyJoinMutation.mutateAsync({ lobbyId: pathLobbyId, playerName: playerName, playerId: playerId });
       setJoinedLobbyId(pathLobbyId);
       setWordSubmitted(lobby?.players?.find(p => p.id === playerId)?.submittedWord !== '' ?? false);
+      
     } catch (error) {
       if (error instanceof TRPCClientError) {
         toast.error(error.message);
@@ -82,6 +81,8 @@ const LobbyIdPage = () => {
   }
 
   const submitWord = (playerId: string, word: string) => async () => {
+    console.log("submitting word");
+    console.log(word);
     try {
       await submitWordMutation.mutateAsync({ playerId: playerId, word: word.toLowerCase() });
       setWordSubmitted(true);
@@ -107,30 +108,18 @@ const LobbyIdPage = () => {
   }, []);
 
   useEffect(() => {
-    addEventListener("devicemotion", (event) => {
-      const motion = new Vector3(event.rotationRate?.alpha ?? 0, event.rotationRate?.beta ?? 0, event.rotationRate?.gamma ?? 0);
-      orientation.current = orientation.current.scale(0.75).add(motion.scale(0.25));
-
-      if (orientation.current.magnitude() > 200) {
-        // TODO also need to check round ended?
-        if (wordSubmitted && !flipped.current && pusherChannel.current) {
-          flipped.current = true;
-        }
-      }
-    });
-
-    return () => {
-      removeEventListener("devicemotion", () => ({}));
-    }
-  }, [wordSubmitted]);
-
-  useEffect(() => {
     pusherChannel.current = initPusher();
 
     return () => {
       pusherChannel.current?.unbind_all();
     };
   }, [joinedLobbyId]);
+
+  useEffect(() => {
+    if (lobby) {
+      setLobbyUrl(window.location.href);
+    }
+  }, [lobby]);
 
   const initPusher = (): Channel | null => {
     if (!joinedLobbyId) {
@@ -168,39 +157,40 @@ const LobbyIdPage = () => {
   };
 
   return (
-    <div
-      className={`${
-        flashGreen && "animate-flashGreen"
-      } ${
-        flashGrey && "animate-flashGrey"
-      } bg-stone-900 text-stone-100 h-full w-full font-poppins flex flex-col justify-center items-center p-8`}
-      onAnimationEnd={() => {
-        setFlashGreen(false);
-        setFlashGrey(false);
-      }}
-    >
-      <div>{flipped.current ? 'flipped' : 'not flipped'}</div>
+    <div className={'bg-stone-900 text-stone-100 h-full w-full font-poppins flex flex-col justify-center items-center p-8'}>
       <Toaster />
-      <Modal title="Players" open={playerListIsOpen} setOpen={setModalIsOpen} body={<PlayerList lobbyId={pathLobbyId as string} playerId={playerId} />} />
+      <Modal title="Players" open={playerListIsOpen} setOpen={setModalIsOpen} body={
+        <>
+          <PlayerList lobbyId={pathLobbyId as string} playerId={playerId} />
+          <div className='flex content-center justify-center'>
+            <QRCode value={lobbyUrl} className='m-8' />
+          </div>
+        </>
+      } />
 
       {/* This should be an overlay, preventing players from interacting without first joining themselves */}
       {!lobby &&
         <div className=''>
           <h1 className='text-4xl my-8'>Game</h1>
           <div className='my-4'>
-            <Input value={playerName} placeholder='Enter your name' stateFn={setPlayerName} />
+            <Input value={playerName} placeholder='Enter your name' stateFn={setPlayerName} onSubmit={joinLobby} />
           </div>
           <Button onClick={joinLobby} text='Join Lobby' loading={lobbyJoinMutation.isLoading} />
         </div>
       }
       {lobby &&
-        <div>
+        <div className='flex flex-col content-center justify-center h-full'>
           <button onClick={() => setPlayerListIsOpen(true)} className='fixed right-0 top-0 text-stone-200 m-4'>
             <UserPlus size={24} />
           </button>
 
+          {!lobby.gameStarted && 
+            <div className='flex flex-col content-center justify-center h-full'>
+              <h1 className='text-4xl my-8'>Waiting for game to start</h1>
+            </div>
+          }
           {lobby.gameStarted && 
-            <div>
+            <div className='flex items-center h-full'>
               {lobby.roundExpiration &&
                 <div className='fixed text-center text-2xl inset-x-0 top-0 m-4'>
                   <Timer expiration={lobby.roundExpiration} />
@@ -212,10 +202,12 @@ const LobbyIdPage = () => {
                 <div>
                   <div className='flex flex-col content-center items-center'>
                     <div className={'flex items-center text-lg ' + (lobby.currentWord?.startsWith('_') ? 'flex-row' : 'flex-row-reverse')}>
-                      <Input className='w-1/2' value={word} placeholder='' stateFn={setWord} />
+                      <Input className='w-1/2' value={word} placeholder='' stateFn={setWord} onSubmit={submitWord(playerId, word)} />
                       <h2 className={'text-lg w-1/2 border-2 border-transparent border-b-yellow-700 text-yellow-500 ' + (lobby.currentWord?.startsWith('_') ? '' : 'text-right')}>{lobby.currentWord?.replace('_', '')}</h2>
                     </div>
-                    <Button onClick={submitWord(playerId, word)} text='Submit' loading={submitWordMutation.isLoading} />
+                    <div className='fixed inset-x-0 bottom-0'>
+                      <Button onClick={submitWord(playerId, word)} text='Submit' loading={submitWordMutation.isLoading} />
+                    </div>
                   </div>
                 </div>
               }
@@ -223,12 +215,13 @@ const LobbyIdPage = () => {
                 <div>
                   {showWord &&
                     <div>
-                      <h2 className='text-4xl'>{word}</h2>
+                      <h2 className='text-9xl font-bold text-center'>{word}</h2>
                     </div>
                   }
                   {!showWord &&
                     <div>
                       <h2>Word submitted, waiting for other players...</h2>
+                      <PlayerList className='m-8' lobbyId={pathLobbyId as string} playerId={playerId} />
                     </div>
                   }
                 </div>
@@ -237,22 +230,24 @@ const LobbyIdPage = () => {
           }
           {/* Leader controls */}
           {lobby.leaderId === playerId &&
-            <div className='flex flex-col content-center items-center'>
-              {!lobby.gameStarted &&
-                <div>
-                  <Button onClick={startRound} text='Start' loading={startRoundMutation.isLoading} />
-                </div>
-              }
-              {lobby.gameStarted && wordSubmitted &&
-                <div>
-                  {showWord &&
-                    <Button onClick={startRound} text='Start round' loading={startRoundMutation.isLoading} />
-                  }
-                  {!showWord &&
-                    <Button onClick={endRound} text='End round' loading={endRoundMutation.isLoading} />
-                  }                  
-                </div>
-              }
+            <div className='fixed inset-x-0 bottom-0 text-stone-200 m-4'>
+              <div className='flex justify-center'>
+                {!lobby.gameStarted &&
+                  <div>
+                    <Button onClick={startRound} text='Start' loading={startRoundMutation.isLoading} />
+                  </div>
+                }
+                {lobby.gameStarted && wordSubmitted &&
+                  <div>
+                    {showWord &&
+                      <Button onClick={startRound} text='Next round' loading={startRoundMutation.isLoading} />
+                    }
+                    {!showWord &&
+                      <Button onClick={endRound} text='End round' loading={endRoundMutation.isLoading} />
+                    }                  
+                  </div>
+                }
+              </div>
             </div>
           }
         </div>

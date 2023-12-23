@@ -1,13 +1,10 @@
 import { api } from '~/utils/api';
 
-import { type Lobby } from '@prisma/client';
-
 import { Trash2, Check } from 'react-feather';
 import toast from 'react-hot-toast';
 import { TRPCClientError } from '@trpc/client';
-import QRCode from 'react-qr-code';
 
-export default function PlayerList(props: { lobbyId: string, playerId: string }) {
+export default function PlayerList(props: { className?: string, lobbyId: string, playerId: string }) {
   const lobbyKickMutation = api.lobby.kick.useMutation();
 
   const { data: lobby } = api.lobby.get.useQuery({ lobbyId: props.lobbyId }, { enabled: !!props.lobbyId });
@@ -27,7 +24,7 @@ export default function PlayerList(props: { lobbyId: string, playerId: string })
   }
   
   return (
-    <>
+    <div className={props.className}>
       <ul>
         {lobby?.players.map((player) => {
           return (
@@ -47,10 +44,6 @@ export default function PlayerList(props: { lobbyId: string, playerId: string })
           );
         })}
       </ul>
-
-      <div className='flex content-center justify-center'>
-        <QRCode value={window.location.href} className='m-8' />
-      </div>
-    </>
+    </div>
   );
 };

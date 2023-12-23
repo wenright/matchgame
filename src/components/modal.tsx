@@ -43,9 +43,7 @@ export default function Modal(props: {open: boolean, setOpen: (arg0: boolean) =>
                     onClick={() => props.setOpen(false)}
                     ><X /></button>
                   <div className="mt-2">
-                    <p className="text-sm">
-                      {props.body}
-                    </p>
+                    {props.body}
                   </div>
 
                   {props.buttonText && props.buttonAction &&
