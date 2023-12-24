@@ -36,13 +36,14 @@ const GameControls = (props: {lobby: Lobby, playerId: string, word: string, setW
       }
 
       {props.wordSubmitted ? (
-        <div className="w-full py-4 rounded-lg bg-stone-800">
+        <div className='w-full'>
           {props.showWord ?
-            <div>
-              <h2 className='text-[14vw] font-bold text-center break-words'>{props.word}</h2>
+            <div className={'flex w-full ' + (props.lobby.currentWord?.startsWith('_') ? 'flex-col-reverse' : 'flex-col')}>
+              <h4 className='text-[9vw] text-center break-words text-stone-500'>{props.lobby.currentWord?.replace('_', '')}</h4>
+              <h2 className='text-[14vw] font-bold text-center break-words py-4 my-4 rounded-lg bg-stone-800'>{props.word}</h2>
             </div>
           :
-            <div>
+            <div className='w-full py-4 rounded-lg bg-stone-800'>
               <PlayerList className='my-8' lobbyId={props.lobby.id} playerId={props.playerId} hideKick={true} />
               <h2 className='text-stone-500 text-center'>Word submitted, waiting for other players...</h2>
             </div>

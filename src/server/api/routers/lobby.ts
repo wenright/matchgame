@@ -180,7 +180,7 @@ export const lobbyRouter = createTRPCRouter({
       } else {
         let gameOver = false;
         for (const player of players) {
-          if (player.score >= 4) {
+          if (player.score >= 12) {
             gameOver = true;
           }
         }
