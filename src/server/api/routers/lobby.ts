@@ -33,6 +33,12 @@ export const lobbyRouter = createTRPCRouter({
       if (!lobby) {
         throw new TRPCClientError("Lobby ID not found");
       }
+
+      const existingPlayer = await ctx.db.user.findUnique({
+        where: {
+          id: input.playerId,
+        },
+      });
       
       await ctx.db.user.upsert({
         create: {
@@ -43,7 +49,7 @@ export const lobbyRouter = createTRPCRouter({
         update: {
           name: input.playerName,
           lobbyId: input.lobbyId,
-          score: 0,
+          score: existingPlayer?.lobbyId === input.lobbyId ? existingPlayer.score : 0,
         },
         where: {
           id: input.playerId,
