@@ -1,4 +1,4 @@
-import { v4 } from "uuid";
+import { init } from '@paralleldrive/cuid2';
 import { z } from "zod";
 import Pusher from "pusher";
 
@@ -20,9 +20,13 @@ const triggerEvent = async (lobbyId: string, eventName: string) => {
   await pusher.trigger(`lobby-${lobbyId}`, eventName, {});
 }
 
+const createId = init({
+  length: 4,
+});
+
 export const lobbyRouter = createTRPCRouter({
   join: publicProcedure
-    .input(z.object({ lobbyId: z.string().uuid(), playerName: z.string().min(1), playerId: z.string().uuid() }))
+    .input(z.object({ lobbyId: z.string().length(4), playerName: z.string().min(1), playerId: z.string().uuid() }))
     .mutation(async ({ ctx, input }) => {
       const lobby = await ctx.db.lobby.findUnique({
         where: {
@@ -77,7 +81,7 @@ export const lobbyRouter = createTRPCRouter({
     }),
 
   create: publicProcedure
-    .input(z.object({ playerId: z.string().uuid() }))
+    .input(z.object({ playerId: z.string() }))
     .mutation(async ({ ctx, input }) => {
       await ctx.db.lobby.deleteMany({
         where: {
@@ -87,14 +91,14 @@ export const lobbyRouter = createTRPCRouter({
       
       return await ctx.db.lobby.create({
         data: {
-          id: v4(),
+          id: createId(),
           leaderId: input.playerId,
         },
       });
     }),
 
   kick: publicProcedure
-    .input(z.object({ lobbyId: z.string().uuid(), playerId: z.string().uuid() }))
+    .input(z.object({ lobbyId: z.string().length(4), playerId: z.string().uuid() }))
     .mutation(async ({ ctx, input }) => {
       await ctx.db.lobby.update({
         where: {
@@ -113,7 +117,7 @@ export const lobbyRouter = createTRPCRouter({
     }),
 
   get: publicProcedure
-    .input(z.object({ lobbyId: z.string().uuid() }))
+    .input(z.object({ lobbyId: z.string().length(4) }))
     .query(async ({ ctx, input }) => {
       // TODO exclude player ID
       return await ctx.db.lobby.findUnique({
@@ -128,7 +132,7 @@ export const lobbyRouter = createTRPCRouter({
 
   // TODO for these, maybe add some authentication, so only the host can start the game
   startRound: publicProcedure
-    .input(z.object({ lobbyId: z.string().uuid() }))
+    .input(z.object({ lobbyId: z.string().length(4) }))
     .mutation(async ({ ctx, input }) => {
       const players = await ctx.db.user.findMany({
         where: {
@@ -222,7 +226,7 @@ export const lobbyRouter = createTRPCRouter({
     }),
 
   endRound: publicProcedure
-    .input(z.object({ lobbyId: z.string().uuid() }))
+    .input(z.object({ lobbyId: z.string().length(4) }))
     .mutation(async ({ ctx, input }) => {
       const players = await ctx.db.user.findMany({
         where: {
