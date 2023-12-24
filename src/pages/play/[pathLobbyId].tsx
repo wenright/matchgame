@@ -36,6 +36,13 @@ const LobbyIdPage = () => {
   const { data: lobby, refetch: refetchLobby } = api.lobby.get.useQuery({ lobbyId: joinedLobbyId }, { enabled: !!joinedLobbyId });
   console.log(lobby);
 
+  const winner = lobby?.players.reduce((prev, current) => {
+    return (prev.score > current.score) ? prev : current;
+  });
+  const winners = lobby?.players.filter((player) => {
+    return player.score === winner?.score;
+  });
+
   Pusher.logToConsole = true;
 
   const joinLobby = async () => {
@@ -129,13 +136,13 @@ const LobbyIdPage = () => {
     <div className={'bg-stone-900 text-stone-100 h-full w-full font-poppins flex flex-col justify-center items-center p-8'}>
       <Toaster />
       <Modal title="Players" open={playerListIsOpen} setOpen={setModalIsOpen} body={
-        <>
-          <PlayerList lobbyId={pathLobbyId as string} playerId={playerId} />
-          <div className='flex content-center justify-center'>
-            <QRCode value={lobbyUrl} className='m-8' />
-          </div>
-        </>
-      } />
+          <>
+            <PlayerList lobbyId={pathLobbyId as string} playerId={playerId} />
+            <div className='flex content-center justify-center'>
+              <QRCode value={lobbyUrl} className='m-8' />
+            </div>
+          </>
+        } />
 
       {lobby ?
         <div className='flex flex-col content-center justify-center h-full w-full'>
@@ -149,9 +156,25 @@ const LobbyIdPage = () => {
             <UserPlus size={24} />
           </button>
 
-          {!lobby.gameStarted &&
+          {!lobby.gameStarted && !lobby.gameOver &&
             <div className='flex flex-col content-center justify-center h-full'>
-              <h1 className='text-4xl my-8'>Waiting for game to start</h1>
+              <h1 className='text-4xl my-8 text-center'>Waiting for game to start</h1>
+            </div>
+          }
+
+          {lobby.gameOver &&
+            <div className='flex flex-col content-center justify-center h-full text-center'>
+              <div className='text-4xl my-8'>Game over,
+                <p className='inline text-yellow-500'>
+                  {winners?.map((winner, i, row) => {
+                    return (
+                      <span key={winner.id}> {winner.name}{i+1 != row.length ? ',' : ''} </span>
+                    );
+                  })}
+                </p>
+                win{winners?.length ?? 0 > 1 ? '' : 's'}!
+              </div>
+              <PlayerList className='my-8' lobbyId={lobby.id} playerId={playerId} hideKick={true} hideSubmitted={true} />
             </div>
           }
 

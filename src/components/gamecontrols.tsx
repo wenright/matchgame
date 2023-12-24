@@ -23,7 +23,7 @@ const GameControls = (props: {lobby: Lobby, playerId: string, word: string, setW
     }
   };
 
-  if (!props.lobby.gameStarted) {
+  if (!props.lobby.gameStarted || props.lobby.gameOver) {
     return;
   }
   

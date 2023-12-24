@@ -50,6 +50,7 @@ export const lobbyRouter = createTRPCRouter({
           name: input.playerName,
           lobbyId: input.lobbyId,
           score: existingPlayer?.lobbyId === input.lobbyId ? existingPlayer.score : 0,
+          submittedWord: existingPlayer?.lobbyId === input.lobbyId ? existingPlayer.submittedWord : null,
         },
         where: {
           id: input.playerId,
@@ -158,6 +159,48 @@ export const lobbyRouter = createTRPCRouter({
 
       const newWord = getRandomWord(previousWords?.previousWords ?? []);
 
+      const lobby = await ctx.db.lobby.findUnique({
+        where: {
+          id: input.lobbyId,
+        },
+      });
+
+      // Clear out player's scores if the game is over
+      if (lobby?.gameOver) {
+        for (const player of players) {
+          await ctx.db.user.update({
+            where: {
+              id: player.id,
+            },
+            data: {
+              score: 0,
+            },
+          });
+        }
+      } else {
+        let gameOver = false;
+        for (const player of players) {
+          if (player.score >= 4) {
+            gameOver = true;
+          }
+        }
+
+        if (gameOver) {
+          await ctx.db.lobby.update({
+            where: {
+              id: input.lobbyId,
+            },
+            data: {
+              gameStarted: false,
+              gameOver: true,
+            },
+          });
+
+          await triggerEvent(input.lobbyId, "roundStarted-event");
+          return;
+        }
+      }
+
       await ctx.db.lobby.update({
         where: {
           id: input.lobbyId,
@@ -168,6 +211,7 @@ export const lobbyRouter = createTRPCRouter({
             push: newWord,
           },
           gameStarted: true,
+          gameOver: false,
         },
         include: {
           players: true,

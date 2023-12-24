@@ -31,6 +31,7 @@ model Lobby {
   currentWord     String?
   previousWords   String[]
   gameStarted     Boolean   @default(false)
+  gameOver        Boolean   @default(false)
   roundCount      Int       @default(0)
   roundExpiration DateTime?
   createdAt       DateTime  @default(now())
