@@ -8,8 +8,6 @@ import { TRPCClientError } from "@trpc/client";
 
 import getRandomWord from "~/server/words";
 
-const ROUND_TIMER = 30;
-
 const triggerEvent = async (lobbyId: string, eventName: string) => {
   const pusher = new Pusher({
     appId: "1714608",
@@ -223,7 +221,7 @@ export const lobbyRouter = createTRPCRouter({
     }),
 
   submitWord: publicProcedure
-    .input(z.object({ playerId: z.string().uuid(), word: z.string() }))
+    .input(z.object({ playerId: z.string().uuid(), word: z.string().min(1) }))
     .mutation(async ({ ctx, input }) => {
       const player = await ctx.db.user.update({
         where: {

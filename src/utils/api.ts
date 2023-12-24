@@ -12,7 +12,7 @@ import superjson from "superjson";
 
 import { type AppRouter } from "~/server/api/root";
 
-import toast, { Toaster } from 'react-hot-toast';
+import toast from 'react-hot-toast';
 
 const getBaseUrl = () => {
   if (typeof window !== "undefined") return ""; // browser should use relative url

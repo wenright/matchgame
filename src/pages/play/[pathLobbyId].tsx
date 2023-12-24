@@ -12,7 +12,7 @@ import { type Channel } from 'pusher-js';
 import { useRouter } from 'next/router';
 import { useEffect, useState, useRef } from 'react';
 import PlayerList from '~/components/playerlist';
-import { UserPlus } from 'react-feather';
+import { UserPlus, Star } from 'react-feather';
 import QRCode from 'react-qr-code';
 import { Toaster } from 'react-hot-toast';
 
@@ -48,8 +48,6 @@ const LobbyIdPage = () => {
 
       await lobbyJoinMutation.mutateAsync({ lobbyId: pathLobbyId, playerName: playerName, playerId: playerId });
       setJoinedLobbyId(pathLobbyId);
-      setWordSubmitted(lobby?.players?.find(p => p.id === playerId)?.submittedWord !== '' ?? false);
-
     } catch (error) {
       console.log(error);
     }
@@ -80,6 +78,15 @@ const LobbyIdPage = () => {
   useEffect(() => {
     if (lobby) {
       setLobbyUrl(window.location.href);
+
+      const player = lobby?.players?.find(p => p.id === playerId);
+      if (player) {
+        setWordSubmitted(!!player.submittedWord);
+
+        if (word.length === 0) {
+          setWord(player.submittedWord ?? '')
+        }
+      }
     }
   }, [lobby]);
 
@@ -130,9 +137,14 @@ const LobbyIdPage = () => {
         </>
       } />
 
-      {/* This should be an overlay, preventing players from interacting without first joining themselves */}
       {lobby ?
-        <div className='flex flex-col content-center justify-center h-full'>
+        <div className='flex flex-col content-center justify-center h-full w-full'>
+          <div className='fixed left-0 top-0 flex text-stone-200 m-4'>
+            <Star size={24} />
+            <p className='text-2xl ml-2'>
+              {lobby.players.find(p => p.id === playerId)?.score ?? 0}
+            </p>
+          </div>
           <button onClick={() => setPlayerListIsOpen(true)} className='fixed right-0 top-0 text-stone-200 m-4'>
             <UserPlus size={24} />
           </button>
@@ -142,13 +154,13 @@ const LobbyIdPage = () => {
               <h1 className='text-4xl my-8'>Waiting for game to start</h1>
             </div>
           }
-          
+
           <GameControls lobby={lobby} playerId={playerId} word={word} setWord={setWord} wordSubmitted={wordSubmitted} setWordSubmitted={setWordSubmitted} showWord={showWord} />
           <LeaderControls lobby={lobby} playerId={playerId} wordSubmitted={wordSubmitted} showWord={showWord} />
         </div>
         :
         <div className=''>
-          <h1 className='text-4xl my-8'>Game</h1>
+          <h1 className='text-4xl my-8'>Join a Game</h1>
           <div className='my-4'>
             <Input value={playerName} placeholder='Enter your name' stateFn={setPlayerName} onSubmit={joinLobby} />
           </div>
