@@ -52,9 +52,9 @@ const GameControls = (props: {lobby: Lobby, playerId: string, word: string, setW
       ) : (
         <div className="w-full">
           <div className='flex flex-col content-center items-center'>
-            <div className={'flex items-center text-lg ' + (props.lobby.currentWord?.startsWith('_') ? 'flex-row' : 'flex-row-reverse')}>
-              <Input className='w-1/2' value={props.word} placeholder='' stateFn={props.setWord} onSubmit={submitWord(props.playerId, props.word)} />
-              <h2 className={'text-lg w-1/2 border-2 border-transparent border-b-yellow-700 text-yellow-500 ' + (props.lobby.currentWord?.startsWith('_') ? '' : 'text-right')}>{props.lobby.currentWord?.replace('_', '')}</h2>
+            <div className={'flex items-center text-2xl ' + (props.lobby.currentWord?.startsWith('_') ? 'flex-row' : 'flex-row-reverse')}>
+              <Input className='w-1/2 text-2xl' value={props.word} placeholder='' stateFn={props.setWord} onSubmit={submitWord(props.playerId, props.word)} />
+              <h2 className={'text-2xl w-1/2 border-2 border-transparent border-b-yellow-700 text-yellow-500 ' + (props.lobby.currentWord?.startsWith('_') ? '' : 'text-right')}>{props.lobby.currentWord?.replace('_', '')}</h2>
             </div>
             <div className='fixed inset-x-0 bottom-0 my-8'>
               <Button onClick={submitWord(props.playerId, props.word)} text='Submit' loading={submitWordMutation.isLoading} />
