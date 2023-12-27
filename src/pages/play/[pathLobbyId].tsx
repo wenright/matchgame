@@ -172,7 +172,7 @@ const LobbyIdPage = () => {
                     );
                   })}
                 </p>
-                win{winners?.length ?? 0 > 1 ? '' : 's'}!
+                win{(winners?.length ?? 0) > 1 ? '' : 's'}!
               </div>
               <PlayerList className='my-8' lobbyId={lobby.id} playerId={playerId} hideKick={true} hideSubmitted={true} />
             </div>
@@ -183,7 +183,7 @@ const LobbyIdPage = () => {
         </div>
         :
         <div className=''>
-          <h1 className='text-4xl my-8'>Join a Game</h1>
+          <h1 className='text-4xl my-8'>Join Game</h1>
           <div className='my-4'>
             <Input value={playerName} placeholder='Enter your name' stateFn={setPlayerName} onSubmit={joinLobby} />
           </div>
