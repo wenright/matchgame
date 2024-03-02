@@ -14,7 +14,6 @@ model User {
   id            String   @id
   name          String
   score         Int      @default(0)
-  isLeader      Boolean  @default(false)
   submittedWord String?
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt

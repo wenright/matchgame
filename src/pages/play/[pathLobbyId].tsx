@@ -12,7 +12,7 @@ import { type Channel } from 'pusher-js';
 import { useRouter } from 'next/router';
 import { useEffect, useState, useRef } from 'react';
 import PlayerList from '~/components/playerlist';
-import { UserPlus, Star } from 'react-feather';
+import { UserPlus, Star, User } from 'react-feather';
 import QRCode from 'react-qr-code';
 import { Toaster } from 'react-hot-toast';
 
@@ -34,7 +34,6 @@ const LobbyIdPage = () => {
   const lobbyJoinMutation = api.lobby.join.useMutation();
 
   const { data: lobby, refetch: refetchLobby } = api.lobby.get.useQuery({ lobbyId: joinedLobbyId }, { enabled: !!joinedLobbyId });
-  console.log(lobby);
 
   const winner = lobby?.players.reduce((prev, current) => {
     return (prev.score > current.score) ? prev : current;
@@ -43,7 +42,7 @@ const LobbyIdPage = () => {
     return player.score === winner?.score;
   });
   const leader = lobby?.players.find((player) => {
-    return player.isLeader;
+    return player.id === lobby.leaderId;
   });
 
   Pusher.logToConsole = true;
@@ -159,9 +158,22 @@ const LobbyIdPage = () => {
             <UserPlus size={24} />
           </button>
 
-          {!lobby.gameStarted && !lobby.gameOver && leader != null &&
+          {!lobby.gameStarted && !lobby.gameOver &&
             <div className='flex flex-col content-center justify-center h-full'>
-              <h1 className='text-4xl my-8 text-center'>Waiting for {leader.name} to start the game</h1>
+              <h1 className='text-4xl my-8 text-center'>
+                {leader?.id === playerId ?
+                  <>
+                    Click <p className='inline text-yellow-500'>Start</p> to start the game
+                  </>
+                  :
+                  <>
+                    Waiting for <p className='inline text-yellow-500'>{leader?.name ?? 'leader'}</p> to start the game
+                  </>
+                }
+              </h1>
+              <div className='flex my-1 text-center justify-center'>
+                <div className='mx-0.5 text-lg leading-4 h-4 text-stone-500'>{lobby.players.length} joined</div>
+              </div>
             </div>
           }
 
