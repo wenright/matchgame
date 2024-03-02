@@ -1,20 +1,26 @@
 import type { Lobby } from "@prisma/client";
 
-import Timer from '~/components/timer';
-import PlayerList from '~/components/playerlist';
-import Button from '~/components/button';
-import Input from '~/components/input';
+import Timer from '~/components/ui/timer';
+import PlayerList from '~/components/PlayerList';
+import Button from '~/components/ui/button';
+import Input from '~/components/ui/input';
 
 import { api } from '~/utils/api';
 
 import type { SetStateAction, Dispatch } from 'react';
 
-const GameControls = (props: {lobby: Lobby, playerId: string, word: string, setWord: Dispatch<SetStateAction<string>>, wordSubmitted: boolean, setWordSubmitted: Dispatch<SetStateAction<boolean>>, showWord: boolean}) => {
+const GameControls = (props: {
+    lobby: Lobby,
+    playerId: string,
+    word: string,
+    setWord: Dispatch<SetStateAction<string>>,
+    wordSubmitted: boolean,
+    setWordSubmitted: Dispatch<SetStateAction<boolean>>,
+    showWord: boolean}) => {
   const submitWordMutation = api.lobby.submitWord.useMutation();
 
   const submitWord = (playerId: string, word: string) => async () => {
-    console.log("submitting word");
-    console.log(word);
+    console.log("submitting word", word);
     try {
       await submitWordMutation.mutateAsync({ playerId: playerId, word: word.toLowerCase() });
       props.setWordSubmitted(true);

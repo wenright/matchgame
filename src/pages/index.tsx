@@ -2,7 +2,7 @@ import { useRouter } from "next/navigation";
 
 import Head from "next/head";
 
-import Button from '~/components/button';
+import Button from '~/components/ui/button';
 
 import { api } from "~/utils/api";
 import { getOrSetPlayerId } from "~/utils/player";

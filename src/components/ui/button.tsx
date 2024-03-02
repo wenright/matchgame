@@ -1,4 +1,4 @@
-import Spinner from "~/components/spinner";
+import Spinner from "~/components/ui/spinner";
 
 const Button = (props: {text: string, onClick: () => void, loading?: boolean}) => {
   return (

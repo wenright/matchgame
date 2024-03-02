@@ -1,4 +1,4 @@
-import Button from "~/components/button";
+import Button from "~/components/ui/button";
 import { api } from '~/utils/api';
 
 import type { Lobby } from "@prisma/client";
