@@ -42,6 +42,9 @@ const LobbyIdPage = () => {
   const winners = lobby?.players.filter((player) => {
     return player.score === winner?.score;
   });
+  const leader = lobby?.players.find((player) => {
+    return player.isLeader;
+  });
 
   Pusher.logToConsole = true;
 
@@ -156,9 +159,9 @@ const LobbyIdPage = () => {
             <UserPlus size={24} />
           </button>
 
-          {!lobby.gameStarted && !lobby.gameOver &&
+          {!lobby.gameStarted && !lobby.gameOver && leader != null &&
             <div className='flex flex-col content-center justify-center h-full'>
-              <h1 className='text-4xl my-8 text-center'>Waiting for game to start</h1>
+              <h1 className='text-4xl my-8 text-center'>Waiting for {leader.name} to start the game</h1>
             </div>
           }
 
@@ -183,7 +186,7 @@ const LobbyIdPage = () => {
         </div>
         :
         <div className=''>
-          <h1 className='text-4xl my-8'>Join Game</h1>
+          <h1 className='text-4xl my-8 text-center'>Join Game</h1>
           <div className='my-4'>
             <Input value={playerName} placeholder='Enter your name' stateFn={setPlayerName} onSubmit={joinLobby} />
           </div>
