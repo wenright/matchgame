@@ -12,7 +12,7 @@ import { type Channel } from 'pusher-js';
 import { useRouter } from 'next/router';
 import { useEffect, useState, useRef } from 'react';
 import PlayerList from '~/components/playerlist';
-import { UserPlus, Star, User } from 'react-feather';
+import { UserPlus, Star } from 'react-feather';
 import QRCode from 'react-qr-code';
 import { Toaster } from 'react-hot-toast';
 
@@ -148,13 +148,13 @@ const LobbyIdPage = () => {
 
       {lobby ?
         <div className='flex flex-col content-center justify-center h-full w-full'>
-          <div className='fixed left-0 top-0 flex text-stone-200 m-4'>
+          <div className='fixed left-0 top-0 flex text-stone-200 m-4 p-2'>
             <Star size={24} />
             <p className='text-2xl ml-2'>
               {lobby.players.find(p => p.id === playerId)?.score ?? 0}
             </p>
           </div>
-          <button onClick={() => setPlayerListIsOpen(true)} className='fixed right-0 top-0 text-stone-200 m-4'>
+          <button onClick={() => setPlayerListIsOpen(true)} className='fixed right-0 top-0 p-2 text-stone-200 m-4 bg-stone-700 hover:bg-stone-500 rounded-md shadow-xl'>
             <UserPlus size={24} />
           </button>
 
