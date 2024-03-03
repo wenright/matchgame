@@ -133,7 +133,7 @@ const LobbyIdPage = () => {
               }
             </>
           :
-            <WaitingRoomView localPlayer={localPlayer} leader={leader} numPlayers={lobby.players.length} />
+            <WaitingRoomView lobby={lobby} localPlayer={localPlayer} leader={leader} numPlayers={lobby.players.length} />
           }
 
         </>
