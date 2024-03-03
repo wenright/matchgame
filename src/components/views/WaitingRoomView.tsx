@@ -26,7 +26,7 @@ const WaitingRoomView = (props: {lobby: Lobby, localPlayer: User|undefined, lead
         <div className='mx-0.5 text-lg leading-4 h-4 text-stone-500'>{numPlayers} joined</div>
       </div>
       {!lobby.gameStarted &&
-        <div className='mt-8'>
+        <div className='mt-4'>
           <Button onClick={() => startRoundMutation.mutate({lobbyId: lobby.id})} text='Start' loading={startRoundMutation.isLoading} />
         </div>
       }

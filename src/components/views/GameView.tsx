@@ -1,56 +1,19 @@
 import type { Lobby, User } from "@prisma/client";
 
-import LeaderControls from '~/components/LeaderControls';
 import GameControls from '~/components/GameControls';
 
-import { useEffect, useState } from 'react';
 import { UserPlus, Star } from 'react-feather';
-import Pusher from 'pusher-js';
+import { Dispatch, SetStateAction } from "react";
 
 const GameView = (props: {
     lobby: Lobby,
     localPlayer: User,
-    joinedLobbyId: string,
-    lobbyRefetch: () => void,
-    openPlayerList: () => void}) => {
-  const { lobby, localPlayer, joinedLobbyId, lobbyRefetch, openPlayerList } = props;
-
-  const [word, setWord] = useState<string>('');
-  const [wordSubmitted, setWordSubmitted] = useState<boolean>(false);
-  const [showWord, setShowWord] = useState<boolean>(false);
-
-  useEffect(() => {
-    if (lobby && localPlayer) {
-      setWordSubmitted(!!localPlayer.submittedWord);
-
-      if (word.length === 0) {
-        setWord(localPlayer.submittedWord ?? '')
-      }
-    }
-  }, [lobby]);
-
-  useEffect(() => {
-    const pusher = new Pusher('622c76977c5377aae795', {
-      cluster: 'us2'
-    });
-
-    console.log('Subscribing to ' + `lobby-${joinedLobbyId}`);
-    const channel = pusher.subscribe(`lobby-${joinedLobbyId}`);
-
-    channel.bind('roundStarted-event', async function () {
-      console.log('Round started');
-      setWordSubmitted(false);
-      setWord('');
-      setShowWord(false);
-      lobbyRefetch();
-    });
-
-    channel.bind('roundEnded-event', async function () {
-      console.log('Round ended');
-      setShowWord(true);
-      lobbyRefetch();
-    });
-  }, []);
+    openPlayerList: () => void
+    word: string,
+    setWord: Dispatch<SetStateAction<string>>,
+    wordSubmitted: boolean,
+    setWordSubmitted: Dispatch<SetStateAction<boolean>>}) => {
+  const { lobby, localPlayer, openPlayerList, word, setWord, wordSubmitted, setWordSubmitted } = props;
   
   return (
     <div className='flex flex-col content-center justify-center h-full w-full'>
@@ -64,8 +27,7 @@ const GameView = (props: {
         <UserPlus size={24} />
       </button>
 
-      <GameControls lobby={lobby} playerId={localPlayer.id} word={word} setWord={setWord} wordSubmitted={wordSubmitted} setWordSubmitted={setWordSubmitted} showWord={showWord} />
-      <LeaderControls lobby={lobby} playerId={localPlayer.id} wordSubmitted={wordSubmitted} showWord={showWord} />
+      <GameControls lobby={lobby} playerId={localPlayer.id} word={word} setWord={setWord} wordSubmitted={wordSubmitted} setWordSubmitted={setWordSubmitted} />
     </div>
   );
 };

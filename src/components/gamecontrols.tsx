@@ -8,6 +8,7 @@ import Input from '~/components/ui/input';
 import { api } from '~/utils/api';
 
 import type { SetStateAction, Dispatch } from 'react';
+import toast from 'react-hot-toast';
 
 const GameControls = (props: {
     lobby: Lobby,
@@ -15,12 +16,17 @@ const GameControls = (props: {
     word: string,
     setWord: Dispatch<SetStateAction<string>>,
     wordSubmitted: boolean,
-    setWordSubmitted: Dispatch<SetStateAction<boolean>>,
-    showWord: boolean}) => {
+    setWordSubmitted: Dispatch<SetStateAction<boolean>>}) => {
   const submitWordMutation = api.lobby.submitWord.useMutation();
 
   const submitWord = (playerId: string, word: string) => async () => {
     console.log("submitting word", word);
+
+    if (word.length === 0) {
+      toast.error('Word cannot be empty');
+      return;
+    }
+    
     try {
       await submitWordMutation.mutateAsync({ playerId: playerId, word: word.toLowerCase() });
       props.setWordSubmitted(true);
@@ -43,17 +49,10 @@ const GameControls = (props: {
 
       {props.wordSubmitted ? (
         <div className='w-full'>
-          {props.showWord ?
-            <div className={'flex w-full ' + (props.lobby.currentWord?.startsWith('_') ? 'flex-col-reverse' : 'flex-col')}>
-              <h4 className='text-[9vw] text-center break-words text-stone-500'>{props.lobby.currentWord?.replace('_', '')}</h4>
-              <h2 className='text-[14vw] font-bold text-center break-words py-4 my-4 rounded-lg bg-stone-800'>{props.word}</h2>
-            </div>
-          :
-            <div className='w-full py-4 rounded-lg bg-stone-800'>
-              <PlayerList className='my-8' lobbyId={props.lobby.id} playerId={props.playerId} hideKick={true} />
-              <h2 className='text-stone-500 text-center'>Word submitted, waiting for other players...</h2>
-            </div>
-          }
+          <div className='w-full py-4 rounded-lg bg-stone-800'>
+            <PlayerList className='my-8' lobbyId={props.lobby.id} playerId={props.playerId} hideKick={true} />
+            <h2 className='text-stone-500 text-center'>Word submitted, waiting for other players...</h2>
+          </div>
         </div>
       ) : (
         <div className="w-full">

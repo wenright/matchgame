@@ -8,6 +8,8 @@ import PlayerList from '~/components/PlayerList';
 import GameOver from '~/components/GameOver';
 import GameView from '~/components/views/GameView';
 import WaitingRoomView from '~/components/views/WaitingRoomView';
+import ScoreView from '~/components/views/ScoreView';
+import LeaderControls from '~/components/LeaderControls';
 
 import Pusher from 'pusher-js';
 import { type Channel } from 'pusher-js';
@@ -27,6 +29,9 @@ const LobbyIdPage = () => {
   const [playerId, setPlayerId] = useState<string>('');
   const [playerListIsOpen, setPlayerListIsOpen] = useState<boolean>(false);
   const [lobbyUrl, setLobbyUrl] = useState<string>('');
+  const [roundEnded, setRoundEnded] = useState<boolean>(false);
+  const [word, setWord] = useState<string>('');
+  const [wordSubmitted, setWordSubmitted] = useState<boolean>(false);
 
   const pusherChannel = useRef<Channel | null>(null);
 
@@ -76,6 +81,14 @@ const LobbyIdPage = () => {
   useEffect(() => {
     if (lobby) {
       setLobbyUrl(window.location.href);
+
+      if (localPlayer) {
+        setWordSubmitted(!!localPlayer.submittedWord);
+
+        if (word.length === 0) {
+          setWord(localPlayer.submittedWord ?? '')
+        }
+      }
     }
   }, [lobby]);
 
@@ -102,6 +115,22 @@ const LobbyIdPage = () => {
       await refetchLobby();
     });
 
+    channel.bind('roundStarted-event', async function () {
+      console.log('Round started');
+      setWordSubmitted(false);
+      setWord('');
+      setRoundEnded(false);
+
+      await refetchLobby();
+    });
+
+    channel.bind('roundEnded-event', async function () {
+      console.log('Round ended');
+      setRoundEnded(true);
+
+      await refetchLobby();
+    });
+
     return channel;
   };
 
@@ -124,18 +153,22 @@ const LobbyIdPage = () => {
               {lobby.gameOver ?
                 <GameOver lobby={lobby} playerId={playerId} winners={winners ?? []} />
                 :
-                <GameView
-                  lobby={lobby}
-                  localPlayer={localPlayer}
-                  joinedLobbyId={joinedLobbyId}
-                  lobbyRefetch={() => refetchLobby()}
-                  openPlayerList={() => setPlayerListIsOpen(true)} />
+                <>
+                  {roundEnded ?
+                    <ScoreView lobby={lobby} localPlayer={localPlayer} />
+                    :
+                    <GameView lobby={lobby} localPlayer={localPlayer} openPlayerList={() => setPlayerListIsOpen(true)} word={word} setWord={setWord} wordSubmitted={wordSubmitted} setWordSubmitted={setWordSubmitted} />
+                  }
+
+                  {lobby.leaderId == localPlayer.id && wordSubmitted &&
+                    <LeaderControls lobby={lobby} roundEnded={roundEnded} />
+                  }
+                </>
               }
             </>
           :
             <WaitingRoomView lobby={lobby} localPlayer={localPlayer} leader={leader} numPlayers={lobby.players.length} />
           }
-
         </>
         :
         <div>
