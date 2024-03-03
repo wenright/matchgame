@@ -12,6 +12,7 @@ import WaitingRoomView from '~/components/views/WaitingRoomView';
 import Pusher from 'pusher-js';
 import { type Channel } from 'pusher-js';
 import { useRouter } from 'next/router';
+import { Analytics } from "@vercel/analytics/react"
 import { useEffect, useState, useRef } from 'react';
 import QRCode from 'react-qr-code';
 import { Toaster } from 'react-hot-toast';
@@ -145,6 +146,8 @@ const LobbyIdPage = () => {
           <Button onClick={joinLobby} text='Join Lobby' loading={lobbyJoinMutation.isLoading} />
         </div>
       }
+
+      <Analytics />
     </div>
   );
 };
