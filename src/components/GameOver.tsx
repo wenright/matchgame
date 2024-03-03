@@ -2,8 +2,8 @@ import PlayerList from '~/components/PlayerList';
 
 import type { Lobby, User } from "@prisma/client";
 
-const GameOver = (props: {lobby: Lobby, playerId: string, winners: Array<User>}) => {
-  const { lobby, playerId, winners } = props;
+const GameOver = (props: {lobby: Lobby, players: Array<User>, playerId: string, winners: Array<User>}) => {
+  const { lobby, players, playerId, winners } = props;
   
   return (
     <div className='flex flex-col content-center justify-center h-full text-center'>
@@ -17,7 +17,7 @@ const GameOver = (props: {lobby: Lobby, playerId: string, winners: Array<User>})
         </p>
         win{(winners?.length ?? 0) > 1 ? '' : 's'}!
       </div>
-      <PlayerList className='my-8' lobbyId={lobby.id} playerId={playerId} hideKick={true} hideSubmitted={true} />
+      <PlayerList className='my-8' lobby={lobby} players={players} playerId={playerId} roundEnded={true} hideKick={true} hideSubmitStatus={true} />
     </div>
   );
 }

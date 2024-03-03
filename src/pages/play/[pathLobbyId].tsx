@@ -8,8 +8,7 @@ import PlayerList from '~/components/PlayerList';
 import GameOver from '~/components/GameOver';
 import GameView from '~/components/views/GameView';
 import WaitingRoomView from '~/components/views/WaitingRoomView';
-import ScoreView from '~/components/views/ScoreView';
-import LeaderControls from '~/components/LeaderControls';
+import ScoreView from '~/components/WordDisplay';
 
 import Pusher from 'pusher-js';
 import { type Channel } from 'pusher-js';
@@ -19,6 +18,8 @@ import { useEffect, useState, useRef } from 'react';
 import QRCode from 'react-qr-code';
 import { Toaster } from 'react-hot-toast';
 import colors from 'tailwindcss/colors'
+import { Star } from 'react-feather';
+import LeaderControls from '~/components/LeaderControls';
 
 const LobbyIdPage = () => {
   const router = useRouter();
@@ -134,41 +135,51 @@ const LobbyIdPage = () => {
     return channel;
   };
 
+  console.log(lobby?.players);
+
   return (
     <div className={'bg-stone-900 text-stone-100 h-full w-full font-poppins flex flex-col justify-center items-center p-8'}>
       <Toaster />
-      <Modal title="Players" open={playerListIsOpen} setOpen={setModalIsOpen} body={
-          <>
-            <PlayerList lobbyId={pathLobbyId as string} playerId={playerId} />
-            <div className='flex content-center justify-center'>
-              <QRCode value={lobbyUrl} className='m-8' fgColor={colors.stone[800]} bgColor={colors.stone[200]} />
-            </div>
-          </>
-        } />
+      <div className='fixed left-0 top-0 flex text-stone-200 m-4 p-2'>
+        <Star size={24} />
+        <p className='text-2xl ml-2'>
+          {localPlayer?.score}
+        </p>
+      </div>
 
       {lobby && localPlayer ?
         <>
-          {lobby.gameStarted ? 
+          <Modal title="Players" open={playerListIsOpen} setOpen={setModalIsOpen} body={
+            <>
+              <PlayerList lobby={lobby} players={lobby.players} playerId={playerId} roundEnded={false} hideSubmitStatus={true} />
+              <div className='flex content-center justify-center'>
+                <QRCode value={lobbyUrl} className='m-8' fgColor={colors.stone[800]} bgColor={colors.stone[200]} />
+              </div>
+            </>
+          } />
+          {lobby.gameStarted ?
             <>
               {lobby.gameOver ?
-                <GameOver lobby={lobby} playerId={playerId} winners={winners ?? []} />
+                <GameOver lobby={lobby} players={lobby.players} playerId={playerId} winners={winners ?? []} />
                 :
                 <>
-                  {roundEnded ?
-                    <ScoreView lobby={lobby} localPlayer={localPlayer} />
-                    :
-                    <GameView lobby={lobby} localPlayer={localPlayer} openPlayerList={() => setPlayerListIsOpen(true)} word={word} setWord={setWord} wordSubmitted={wordSubmitted} setWordSubmitted={setWordSubmitted} />
-                  }
-
-                  {lobby.leaderId == localPlayer.id && wordSubmitted &&
-                    <LeaderControls lobby={lobby} roundEnded={roundEnded} />
-                  }
+                  <GameView
+                    lobby={lobby}
+                    players={lobby.players}
+                    localPlayer={localPlayer}
+                    roundEnded={roundEnded}
+                    openPlayerList={() => setPlayerListIsOpen(true)}
+                    word={word} setWord={setWord}
+                    wordSubmitted={wordSubmitted}
+                    setWordSubmitted={setWordSubmitted} />
                 </>
               }
             </>
           :
             <WaitingRoomView lobby={lobby} localPlayer={localPlayer} leader={leader} numPlayers={lobby.players.length} />
           }
+
+          <LeaderControls lobby={lobby} playerId={playerId} wordSubmitted={wordSubmitted} roundEnded={roundEnded} />
         </>
         :
         <div>

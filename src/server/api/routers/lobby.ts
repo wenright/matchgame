@@ -267,6 +267,7 @@ export const lobbyRouter = createTRPCRouter({
             score: {
               increment: score,
             },
+            roundScore: score,
           },
         });
       }
