@@ -82,6 +82,7 @@ const LobbyIdPage = () => {
   useEffect(() => {
     if (lobby) {
       setLobbyUrl(window.location.href);
+      setRoundEnded(lobby.roundOver);
 
       if (localPlayer) {
         setWordSubmitted(!!localPlayer.submittedWord);
@@ -118,6 +119,7 @@ const LobbyIdPage = () => {
 
     channel.bind('roundStarted-event', async function () {
       console.log('Round started');
+      // TODO should these just be checked in lobby data, and only have one event to refresh lobby?
       setWordSubmitted(false);
       setWord('');
       setRoundEnded(false);
@@ -127,7 +129,6 @@ const LobbyIdPage = () => {
 
     channel.bind('roundEnded-event', async function () {
       console.log('Round ended');
-      setRoundEnded(true);
 
       await refetchLobby();
     });

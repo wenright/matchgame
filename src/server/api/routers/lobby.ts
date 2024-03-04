@@ -197,6 +197,7 @@ export const lobbyRouter = createTRPCRouter({
             data: {
               gameStarted: false,
               gameOver: true,
+              roundOver: false
             },
           });
 
@@ -216,6 +217,7 @@ export const lobbyRouter = createTRPCRouter({
           },
           gameStarted: true,
           gameOver: false,
+          roundOver: false,
         },
         include: {
           players: true,
@@ -231,6 +233,15 @@ export const lobbyRouter = createTRPCRouter({
       const players = await ctx.db.user.findMany({
         where: {
           lobbyId: input.lobbyId,
+        },
+      });
+
+      await ctx.db.lobby.update({
+        where: {
+          id: input.lobbyId,
+        },
+        data: {
+          roundOver: true,
         },
       });
 
