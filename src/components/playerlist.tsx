@@ -68,14 +68,14 @@ const PlayerListItem = (props: { lobby: Lobby, player: User, winner: User, playe
   };
 
   return (
-    <li key={player.id} className={`flex justify-around items-center p-2 my-2 w-full
+    <li className={`flex justify-around items-center w-full p-2 rounded-lg
         ${player.id === playerId ? 'bg-stone-700' : ''}
         ${lobby.gameOver && player.score === winner?.score ? 'bg-yellow-600' : ''}`}>
       <div className='flex flex-1 justify-center'>
         {player.name}
       </div>
       {roundEnded &&
-        <div className='flex flex-1 justify-center'>{player.submittedWord}</div>
+        <div className='flex flex-1 justify-center text-yellow-500'>{player.submittedWord}</div>
       }
       <div className='flex flex-1 justify-center relative'>
         {roundEnded ?

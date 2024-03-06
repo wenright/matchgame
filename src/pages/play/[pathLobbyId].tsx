@@ -8,7 +8,6 @@ import PlayerList from '~/components/PlayerList';
 import GameOver from '~/components/GameOver';
 import GameView from '~/components/views/GameView';
 import WaitingRoomView from '~/components/views/WaitingRoomView';
-import ScoreView from '~/components/WordDisplay';
 
 import Pusher from 'pusher-js';
 import { type Channel } from 'pusher-js';
@@ -142,10 +141,10 @@ const LobbyIdPage = () => {
     <div className={'bg-stone-900 text-stone-100 h-full w-full font-poppins flex flex-col justify-center items-center p-8'}>
       <Toaster />
       <div className='fixed left-0 top-0 flex text-stone-200 m-4 p-2'>
-        <Star size={24} />
-        <p className='text-2xl ml-2'>
+        <p className='text-2xl mr-2'>
           {localPlayer?.score}
         </p>
+        <Star size={24} />
       </div>
 
       {lobby && localPlayer ?

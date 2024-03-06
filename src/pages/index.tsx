@@ -14,9 +14,6 @@ export default function Home() {
   const createLobby = async () => {
     try {
       const newLobby = await lobbyCreateMutation.mutateAsync({ playerId: getOrSetPlayerId() });
-      if (newLobby.id) {
-        console.log(newLobby.id);
-      }
 
       router.push(`/play/${newLobby.id}`);
     } catch (error) {

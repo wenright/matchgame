@@ -6,7 +6,7 @@ import { env } from "~/env";
 import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
 import { TRPCClientError } from "@trpc/client";
 
-import getRandomWord from "~/server/words";
+import { getRandomPhrase, Phrases } from "~/server/phrases";
 
 const triggerEvent = async (lobbyId: string, eventName: string) => {
   const pusher = new Pusher({
@@ -152,16 +152,17 @@ export const lobbyRouter = createTRPCRouter({
         });
       }
 
-      const previousWords = await ctx.db.lobby.findUnique({
+      const previousPhrases = await ctx.db.lobby.findUnique({
         where: {
           id: input.lobbyId,
         },
         select: {
-          previousWords: true,
+          previousPhraseIndices: true,
         },
       });
 
-      const newWord = getRandomWord(previousWords?.previousWords ?? []);
+      const newPhraseIndex = getRandomPhrase(previousPhrases?.previousPhraseIndices ?? []);
+      const newPhrase = Phrases[newPhraseIndex] ?? "Error: out of phrases";
 
       const lobby = await ctx.db.lobby.findUnique({
         where: {
@@ -211,9 +212,9 @@ export const lobbyRouter = createTRPCRouter({
           id: input.lobbyId,
         },
         data: {
-          currentWord: newWord,
-          previousWords: {
-            push: newWord,
+          currentPhrase: newPhrase,
+          previousPhraseIndices: {
+            push: newPhraseIndex,
           },
           gameStarted: true,
           gameOver: false,

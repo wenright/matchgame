@@ -16,11 +16,6 @@ const LeaderControls = (props: {lobby: Lobby, playerId: string, wordSubmitted: b
   return (
     <div className='fixed inset-x-0 bottom-0 text-stone-200 m-4'>
       <div className='flex justify-center'>
-        {!lobby.gameStarted &&
-          <div>
-            <Button onClick={() => startRoundMutation.mutate({ lobbyId: lobby.id ?? '' })} text='Start' loading={startRoundMutation.isLoading} />
-          </div>
-        }
         {lobby.gameStarted && wordSubmitted &&
           <div>
             {roundEnded ?
