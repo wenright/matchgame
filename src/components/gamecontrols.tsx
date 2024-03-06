@@ -42,12 +42,12 @@ const GameControls = (props: {
 
   // Replace player name
   let formattedPhrase = reactStringReplace(lobby.currentPhrase ?? '', '[n]', (match, i) => (
-    <span className='text-yellow-500'>{players.find((player) => player.id === lobby.victimId)?.name}</span>
+    <span key={'victim'} className='text-yellow-500'>{players.find((player) => player.id === lobby.victimId)?.name}</span>
   ));
 
   // Replace word
   formattedPhrase = reactStringReplace(formattedPhrase, '[w]', (match, i) => (
-    <span className='text-yellow-500 min-w-8'>{word === '' ? 'this' : word}</span>
+    <span key={'word'} className='text-yellow-500 min-w-8'>{word === '' ? 'this' : word}</span>
   ));
 
   if (!lobby.gameStarted || lobby.gameOver) {
