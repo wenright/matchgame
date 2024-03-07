@@ -42,12 +42,12 @@ export default function PlayerList(props: { className?: string, lobby: Lobby, pl
   return (
     <div className={className}>
       <div className='relative'>
-        <ul className='max-h-56 overflow-y-scroll'>
+        <ul className='max-h-64 pb-8 overflow-y-scroll'>
           {players.map((player, index) => {
             return <PlayerListItem key={player.id} lobby={lobby} player={player} winner={winner} playerId={playerId} index={index} wordToColor={wordToColor} roundEnded={roundEnded} hideKick={hideKick} hideSubmitStatus={hideSubmitStatus} />;
           })}
         </ul>
-        <div className='absolute bottom-0 w-full h-14 z-10 bg-gradient-to-t from-stone-800'></div>
+        <div className='absolute bottom-0 w-full h-8 z-10 bg-gradient-to-t from-stone-800'></div>
       </div>
     </div>
   );

@@ -57,7 +57,7 @@ const GameControls = (props: {
   }
   
   return (
-    <div className='flex flex-col justify-center items-center h-full w-full'>
+    <div className='flex flex-col items-center h-full w-full'>
       {lobby.roundExpiration &&
         <div className='fixed text-center text-2xl inset-x-0 top-0 m-4'>
           <Timer expiration={lobby.roundExpiration} />
@@ -66,14 +66,14 @@ const GameControls = (props: {
 
       {wordSubmitted ? (
         <>
-          <div className={'text-2xl my-12'}>
+          <div className={'text-2xl my-12 text-center'}>
             {formattedPhrase}
           </div>
           <div className='w-full rounded-lg bg-stone-800'>
             <PlayerList className='' lobby={lobby} players={players} playerId={playerId} roundEnded={roundEnded} hideKick={true} hideSubmitStatus={roundEnded} />
             
             {!roundEnded && !allSubmitted && 
-              <h2 className='text-stone-500 m-4 text-center'>Word submitted, waiting for other players...</h2>
+              <h2 className='text-stone-500 mx-4 mb-8 text-center'>Word submitted, waiting for other players...</h2>
             }
           </div>
         </>

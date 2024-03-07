@@ -18,7 +18,7 @@ const GameView = (props: {
   const { lobby, players, localPlayer, roundEnded, openPlayerList, word, setWord, wordSubmitted, setWordSubmitted } = props;
   
   return (
-    <div className='flex flex-col content-center justify-center h-full w-full'>
+    <div className='flex flex-col content-center justify-center h-full w-full my-8'>
       <button onClick={() => openPlayerList()} className='fixed right-0 top-0 p-2 text-stone-200 m-4 bg-stone-700 hover:bg-stone-500 rounded-md shadow-xl'>
         <UserPlus size={24} />
       </button>
