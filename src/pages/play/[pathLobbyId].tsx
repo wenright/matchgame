@@ -119,9 +119,7 @@ const LobbyIdPage = () => {
     channel.bind('roundStarted-event', async function () {
       console.log('Round started');
       // TODO should these just be checked in lobby data, and only have one event to refresh lobby?
-      setWordSubmitted(false);
       setWord('');
-      setRoundEnded(false);
 
       await refetchLobby();
     });
@@ -134,8 +132,6 @@ const LobbyIdPage = () => {
 
     return channel;
   };
-
-  console.log(lobby?.players);
 
   return (
     <div className={'bg-stone-900 text-stone-100 h-full w-full font-poppins flex flex-col justify-center items-center p-8'}>
