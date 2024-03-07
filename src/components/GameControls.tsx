@@ -80,7 +80,7 @@ const GameControls = (props: {
       ) : (
         <div className='w-full'>
           <div className='flex flex-col content-center items-center'>
-            <div className={'inline text-2xl flex-row'}>
+            <div className={'inline text-2xl flex-row my-8'}>
               {formattedPhrase}
             </div>
             <div className='my-12'>
