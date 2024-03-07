@@ -140,15 +140,15 @@ const LobbyIdPage = () => {
   return (
     <div className={'bg-stone-900 text-stone-100 h-full w-full font-poppins flex flex-col justify-center items-center p-8'}>
       <Toaster />
-      <div className='fixed left-0 top-0 flex text-stone-200 m-4 p-2'>
-        <p className='text-2xl mr-2'>
-          {localPlayer?.score}
-        </p>
-        <Star size={24} />
-      </div>
 
       {lobby && localPlayer ?
         <>
+          <div className='fixed left-0 top-0 flex text-stone-200 m-4 p-2'>
+            <p className='text-2xl mr-2'>
+              {localPlayer?.score}
+            </p>
+            <Star size={24} />
+          </div>
           <Modal title="Players" open={playerListIsOpen} setOpen={setModalIsOpen} body={
             <>
               <PlayerList lobby={lobby} players={lobby.players} playerId={playerId} roundEnded={false} hideSubmitStatus={true} />

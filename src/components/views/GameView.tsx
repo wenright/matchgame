@@ -1,12 +1,9 @@
-import { api } from '~/utils/api';
 import GameControls from '~/components/GameControls';
-import Button from '~/components/ui/button';
 
 import type { Lobby, User } from "@prisma/client";
 
-import { UserPlus, Star } from 'react-feather';
+import { UserPlus } from 'react-feather';
 import type { Dispatch, SetStateAction } from "react";
-import WordDisplay from '../WordDisplay';
 
 const GameView = (props: {
     lobby: Lobby,
@@ -25,11 +22,6 @@ const GameView = (props: {
       <button onClick={() => openPlayerList()} className='fixed right-0 top-0 p-2 text-stone-200 m-4 bg-stone-700 hover:bg-stone-500 rounded-md shadow-xl'>
         <UserPlus size={24} />
       </button>
-
-      {roundEnded &&
-        <WordDisplay lobby={lobby} localPlayer={localPlayer} />
-      }
-
       <GameControls lobby={lobby} players={players} playerId={localPlayer.id} roundEnded={roundEnded} word={word} setWord={setWord} wordSubmitted={wordSubmitted} setWordSubmitted={setWordSubmitted} />
     </div>
   );

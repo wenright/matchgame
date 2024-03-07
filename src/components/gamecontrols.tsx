@@ -40,6 +40,8 @@ const GameControls = (props: {
     }
   };
 
+  const allSubmitted = players.every((player) => player.submittedWord !== null);
+
   // Replace player name
   let formattedPhrase = reactStringReplace(lobby.currentPhrase ?? '', '[n]', (match, i) => (
     <span key={'victim'} className='text-yellow-500'>{players.find((player) => player.id === lobby.victimId)?.name}</span>
@@ -47,7 +49,7 @@ const GameControls = (props: {
 
   // Replace word
   formattedPhrase = reactStringReplace(formattedPhrase, '[w]', (match, i) => (
-    <span key={'word'} className='text-yellow-500 min-w-8'>{word === '' ? 'this' : word}</span>
+    <span key={'word'} className='text-yellow-500 min-w-8'>{word === '' ? '[blank]' : word}</span>
   ));
 
   if (!lobby.gameStarted || lobby.gameOver) {
@@ -55,7 +57,7 @@ const GameControls = (props: {
   }
   
   return (
-    <div className='flex items-center h-full w-full'>
+    <div className='flex flex-col justify-center items-center h-full w-full'>
       {lobby.roundExpiration &&
         <div className='fixed text-center text-2xl inset-x-0 top-0 m-4'>
           <Timer expiration={lobby.roundExpiration} />
@@ -63,11 +65,18 @@ const GameControls = (props: {
       }
 
       {wordSubmitted ? (
-        <div className='w-full rounded-lg bg-stone-800'>
-          <PlayerList className='' lobby={lobby} players={players} playerId={playerId} roundEnded={roundEnded} hideKick={true} hideSubmitStatus={roundEnded} />
-          
-          {!roundEnded && <h2 className='text-stone-500 text-center'>Word submitted, waiting for other players...</h2>}
-        </div>
+        <>
+          <div className={'text-2xl my-12'}>
+            {formattedPhrase}
+          </div>
+          <div className='w-full rounded-lg bg-stone-800'>
+            <PlayerList className='' lobby={lobby} players={players} playerId={playerId} roundEnded={roundEnded} hideKick={true} hideSubmitStatus={roundEnded} />
+            
+            {!roundEnded && !allSubmitted && 
+              <h2 className='text-stone-500 m-4 text-center'>Word submitted, waiting for other players...</h2>
+            }
+          </div>
+        </>
       ) : (
         <div className='w-full'>
           <div className='flex flex-col content-center items-center'>

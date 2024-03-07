@@ -26,7 +26,7 @@ export default function Home() {
   return (
     <>
       <Head>
-        <title>Match game</title>
+        <title>Mind [blank]</title>
         {/* TODO */}
         <meta name="description" content="fdsa" />
         <link rel="icon" href="/favicon.ico" />
