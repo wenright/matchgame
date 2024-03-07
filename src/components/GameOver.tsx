@@ -1,4 +1,4 @@
-import PlayerList from '~/components/PlayerList';
+import PlayerList from '~/components/PlayerList'
 
 import type { Lobby, User } from "@prisma/client";
 
